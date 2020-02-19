@@ -1,0 +1,12 @@
+[
+{
+  "directory": "D:/Archive/Coding/ADL/cmake-build-debug",
+  "command": "D:\\Apps\\MSYS64\\mingw64\\bin\\g++.exe     -static -g   -std=gnu++2a -o CMakeFiles\\ADL.dir\\main.cpp.obj -c D:\\Archive\\Coding\\ADL\\main.cpp",
+  "file": "D:/Archive/Coding/ADL/main.cpp"
+},
+{
+  "directory": "D:/Archive/Coding/ADL/cmake-build-debug",
+  "command": "D:\\Apps\\MSYS64\\mingw64\\bin\\g++.exe     -static -g   -std=gnu++2a -o CMakeFiles\\ADL.dir\\bgproc.cpp.obj -c D:\\Archive\\Coding\\ADL\\bgproc.cpp",
+  "file": "D:/Archive/Coding/ADL/bgproc.cpp"
+}
+]
