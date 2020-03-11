@@ -85,9 +85,6 @@
 		<Unit filename="C:/Users/ender/Archive/Coding/ADL/bgproc.cpp">
 			<Option target="ADL"/>
 		</Unit>
-		<Unit filename="C:/Users/ender/Archive/Coding/ADL/header.h">
-			<Option target="ADL"/>
-		</Unit>
 		<Unit filename="C:/Users/ender/Archive/Coding/ADL/main.cpp">
 			<Option target="ADL"/>
 		</Unit>

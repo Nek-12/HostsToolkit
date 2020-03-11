@@ -1,10 +1,9 @@
-
-#include "header.h"
+#include <iostream>
+#include <vector>
+int bgproc(std::string& );
 
 int main(int argc, char *argv[])
 {
-    if(!SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS))
-        std::cerr << "Failed to enter performance mode \n" ;
     int first = true;
     std::string path;
 beginning:

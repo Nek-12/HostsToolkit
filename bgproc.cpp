@@ -1,7 +1,9 @@
-//
-// Created by ender on 17-Jan-20.
-//
-#include "header.h"
+
+#include <iostream>
+#include <fstream>
+#include <forward_list>
+
+using ull = unsigned long long;
 
 int bgproc(std::string& path)
 {
