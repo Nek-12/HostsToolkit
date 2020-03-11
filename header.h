@@ -13,9 +13,9 @@
 #include <fstream>
 #include <vector>
 #include <forward_list>
-#include <thread>
 #include <tchar.h>
-int bgproc(std::string );
+
+int bgproc(std::string& );
 using ull = unsigned long long;
 
 

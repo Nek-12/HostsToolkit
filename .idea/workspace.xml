@@ -11,7 +11,14 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a390095c-0fa2-4208-95ef-b49e07803309" name="Default Changelist" comment="" />
+    <list default="true" id="a390095c-0fa2-4208-95ef-b49e07803309" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bgproc.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/bgproc.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug/ADL.exe" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/ADL.exe" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/ADL.dir/depend.make" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/ADL.dir/depend.make" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/header.h" beforeDir="false" afterPath="$PROJECT_DIR$/header.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/main.cpp" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -33,6 +40,7 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="restartRequiresConfirmation" value="false" />
     <property name="settings.editor.selected.configurable" value="power.mode.ii" />
   </component>
@@ -76,6 +84,12 @@
       <workItem from="1581083678471" duration="981000" />
       <workItem from="1581085289722" duration="1572000" />
       <workItem from="1581925393729" duration="27000" />
+      <workItem from="1582142864748" duration="630000" />
+      <workItem from="1582314859757" duration="191000" />
+      <workItem from="1582315062147" duration="15000" />
+      <workItem from="1583474879774" duration="2762000" />
+      <workItem from="1583478064372" duration="69000" />
+      <workItem from="1583930583886" duration="1133000" />
     </task>
     <servers />
   </component>
@@ -99,10 +113,10 @@
       <screen x="0" y="0" width="1536" height="864" />
     </state>
     <state x="465" y="144" key="EnvironmentVariablesDialog/0.0.1536.864@0.0.1536.864" timestamp="1579259227563" />
-    <state x="498" y="131" key="FileChooserDialogImpl" timestamp="1579866943564">
+    <state x="498" y="131" key="FileChooserDialogImpl" timestamp="1583478129184">
       <screen x="0" y="0" width="1536" height="864" />
     </state>
-    <state x="498" y="131" key="FileChooserDialogImpl/0.0.1536.864@0.0.1536.864" timestamp="1579866943564" />
+    <state x="498" y="131" key="FileChooserDialogImpl/0.0.1536.864@0.0.1536.864" timestamp="1583478129184" />
     <state width="1102" height="264" key="GridCell.Tab.0.bottom" timestamp="1579269350675">
       <screen x="0" y="0" width="1536" height="864" />
     </state>
@@ -139,10 +153,10 @@
       <screen x="0" y="0" width="1536" height="864" />
     </state>
     <state x="349" y="56" key="SettingsEditor/0.0.1536.864@0.0.1536.864" timestamp="1579866843971" />
-    <state x="378" y="216" key="com.intellij.ide.util.TipDialog" timestamp="1581085662039">
+    <state x="378" y="216" key="com.intellij.ide.util.TipDialog" timestamp="1583478105125">
       <screen x="0" y="0" width="1536" height="864" />
     </state>
-    <state x="378" y="216" key="com.intellij.ide.util.TipDialog/0.0.1536.864@0.0.1536.864" timestamp="1581085662039" />
+    <state x="378" y="216" key="com.intellij.ide.util.TipDialog/0.0.1536.864@0.0.1536.864" timestamp="1583478105125" />
     <state x="218" y="108" key="com.intellij.xdebugger.impl.breakpoints.ui.BreakpointsDialogFactory$2" timestamp="1579268533845">
       <screen x="0" y="0" width="1536" height="864" />
     </state>

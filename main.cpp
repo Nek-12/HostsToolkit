@@ -18,7 +18,7 @@ else
 }
     try
 {
-    std::cout << "The path is " << path << std::endl << "Processing..." << std::endl;
+    std::cout << "The path is " << path << std::endl;
     std::cout << "Please stand by" << std::endl;
     bgproc(path);
     //std::this_thread::sleep_for(std::chrono::seconds(2));

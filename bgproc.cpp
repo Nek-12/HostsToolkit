@@ -3,7 +3,7 @@
 //
 #include "header.h"
 
-int bgproc(std::string path)
+int bgproc(std::string& path)
 {
     std::ifstream input(path);
     if (!input.good() ) throw std::exception();
@@ -65,7 +65,7 @@ int bgproc(std::string path)
     std::cout << "Total " << total << " elements processed. " << std::endl
               << "Removed " << removed << " duplicates." << std::endl;
     std::cout << "Saving a file..." << std::endl;
-    for (auto el: lresult)
+    for (auto& el: lresult)
         output << el << "\n";
     std::cout << "Done." << std::endl;
 
