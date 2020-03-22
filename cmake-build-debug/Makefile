@@ -122,33 +122,6 @@ ADL/fast:
 	$(MAKE) -f CMakeFiles\ADL.dir\build.make CMakeFiles/ADL.dir/build
 .PHONY : ADL/fast
 
-bgproc.obj: bgproc.cpp.obj
-
-.PHONY : bgproc.obj
-
-# target to build an object file
-bgproc.cpp.obj:
-	$(MAKE) -f CMakeFiles\ADL.dir\build.make CMakeFiles/ADL.dir/bgproc.cpp.obj
-.PHONY : bgproc.cpp.obj
-
-bgproc.i: bgproc.cpp.i
-
-.PHONY : bgproc.i
-
-# target to preprocess a source file
-bgproc.cpp.i:
-	$(MAKE) -f CMakeFiles\ADL.dir\build.make CMakeFiles/ADL.dir/bgproc.cpp.i
-.PHONY : bgproc.cpp.i
-
-bgproc.s: bgproc.cpp.s
-
-.PHONY : bgproc.s
-
-# target to generate assembly for a file
-bgproc.cpp.s:
-	$(MAKE) -f CMakeFiles\ADL.dir\build.make CMakeFiles/ADL.dir/bgproc.cpp.s
-.PHONY : bgproc.cpp.s
-
 main.obj: main.cpp.obj
 
 .PHONY : main.obj
@@ -185,9 +158,6 @@ help:
 	@echo ... ADL
 	@echo ... edit_cache
 	@echo ... rebuild_cache
-	@echo ... bgproc.obj
-	@echo ... bgproc.i
-	@echo ... bgproc.s
 	@echo ... main.obj
 	@echo ... main.i
 	@echo ... main.s
