@@ -3,6 +3,6 @@
 **/Makefile
 **/CmakeCache.txt
 **/cmake_install.cmake
-cmake-build-debug-*/**
+cmake-build-*/**
 **/RDL.cbp
 /cmake-build-debug/enwik8
