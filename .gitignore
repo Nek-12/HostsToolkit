@@ -1,8 +1,8 @@
-.idea
+.idea/**
 **/CMakeFiles/**
 **/Makefile
 **/CmakeCache.txt
 **/cmake_install.cmake
-**/CourseWork.cbp
-.idea/workspace.xml
-cmake-build-debug/ADL_1.0.exe
+cmake-build-debug-*/**
+**/RDL.cbp
+/cmake-build-debug/enwik8
