@@ -2,24 +2,23 @@
 #include <set>
 #include <fstream>
 
-int main(int argc, char *argv[])
+int wmain(int argc, wchar_t *argv[])
 {
-    std::string path;
-
+    std::wstring path;
     if (argc > 1)
         path = argv[1];
     else
     {
-        std::cout << "Hello, type or drag a text file into a window to remove duplicate lines" << std::endl;
-        std::getline(std::cin, path);
+        std::wcout << "Hello, type or drag a text file into a window to remove duplicate lines" << std::endl;
+        std::getline(std::wcin, path);
     }
     try
     {
-        std::cout << "The path is " << path << std::endl;
-        std::wifstream f(path);
+        std::wcout << "The path is " << path << std::endl;
+        std::wifstream f(path.c_str());
         if (!f) throw std::runtime_error("Error opening input file.");
         size_t cnt = 0;
-        std::wofstream output(path + "_dedup");
+        std::wofstream output(path.append(L"_dedup").c_str());
         if (!output) throw std::runtime_error("Error creating output file.");
         std::set<std::wstring> set;
         std::cout << "Please stand by..." << std::endl;
