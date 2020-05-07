@@ -16,13 +16,13 @@ int main(int argc, char *argv[])
     try
     {
         std::cout << "The path is " << path << std::endl;
-        std::cout << "Please stand by..." << std::endl;
         std::ifstream f(path);
         if (!f) throw std::runtime_error("Error opening input file.");
         size_t cnt = 0;
         std::ofstream output(path + "_dedup");
         if (!output) throw std::runtime_error("Error creating output file.");
         std::set<std::string> set;
+        std::cout << "Please stand by..." << std::endl;
         while (f)
         {
             std::string line;
@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
             set.insert(line);
             ++cnt;
             if (cnt > (set.max_size() - 1000)) throw std::runtime_error("Too large file.");
-            if (cnt % 5000 == 0) //every 5000th line, output a message
+            if (cnt % 10000 == 0) //every 5000th line, output a message
                 std::cout << "Processed " << cnt << " elements" << std::endl;
         }
         if (cnt < 2) throw std::invalid_argument("No data?");
