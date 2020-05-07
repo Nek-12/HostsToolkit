@@ -16,16 +16,16 @@ int main(int argc, char *argv[])
     try
     {
         std::cout << "The path is " << path << std::endl;
-        std::ifstream f(path);
+        std::wifstream f(path);
         if (!f) throw std::runtime_error("Error opening input file.");
         size_t cnt = 0;
-        std::ofstream output(path + "_dedup");
+        std::wofstream output(path + "_dedup");
         if (!output) throw std::runtime_error("Error creating output file.");
-        std::set<std::string> set;
+        std::set<std::wstring> set;
         std::cout << "Please stand by..." << std::endl;
         while (f)
         {
-            std::string line;
+            std::wstring line;
             std::getline(f, line);
             set.insert(line);
             ++cnt;
