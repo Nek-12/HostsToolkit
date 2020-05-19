@@ -1,56 +1,73 @@
 #include <iostream>
 #include <set>
 #include <fstream>
+#include <conio.h>
 
-int wmain(int argc, wchar_t *argv[])
-{
-    std::wstring path;
+using namespace std;
+bool yesNo() {
+    while (true) {
+        switch (getch()) {
+            case 'y':
+                return true;
+            case 'n':
+                return false;
+            default:
+                break;
+        }
+    }
+}
+
+int main(int argc, char* argv[]) try {
+    string path;
     if (argc > 1)
         path = argv[1];
-    else
-    {
-        std::wcout << "Hello, type or drag a text file into a window to remove duplicate lines" << std::endl;
-        std::getline(std::wcin, path);
+    else {
+        cout << "Hello, type or drag a text file into a window to remove duplicate lines" << endl;
+        getline(cin, path);
     }
-    try
-    {
-        std::wcout << "The path is " << path << std::endl;
-        std::wifstream f(path.c_str());
-        if (!f) throw std::runtime_error("Error opening input file.");
-        size_t cnt = 0;
-        std::wofstream output(path.append(L"_dedup").c_str());
-        if (!output) throw std::runtime_error("Error creating output file.");
-        std::set<std::wstring> set;
-        std::cout << "Please stand by..." << std::endl;
-        while (f)
-        {
-            std::wstring line;
-            std::getline(f, line);
-            set.insert(line);
-            ++cnt;
-            if (cnt > (set.max_size() - 1000)) throw std::runtime_error("Too large file.");
-            if (cnt % 10000 == 0) //every 5000th line, output a message
-                std::cout << "Processed " << cnt << " elements" << std::endl;
+    cout << "The path is " << path << endl;
+    ifstream f(path);
+    if (!f) throw runtime_error("Error opening input file.");
+    ofstream output(path.append("_dedup"));
+    if (!output) throw runtime_error("Error creating output file.");
+    cout << "Remove comments (everything after) \"#\" ? y/n" << endl;
+    bool com = yesNo();
+    size_t cnt = 0, comms = 0;
+    set<string> set;
+    cout << "Please stand by..." << endl;
+    while (f) {
+        string line;
+        getline(f, line);
+        ++cnt;
+        if (com) {
+            auto it = line.find('#');
+            if (it != string::npos) {
+                line.erase(it);
+                ++comms;
+                if (line.empty()) continue;
+            }
         }
-        if (cnt < 2) throw std::invalid_argument("No data?");
-        std::cout << "Saving a file..." << std::endl;
-        for (auto& el: set)
-            output << el << "\n";
-        std::cout << "Processed " << cnt
-                  << " elements. Removed " << cnt - set.size()  << " lines." << std::endl;
-        system("pause");
-        return EXIT_SUCCESS;
+        set.insert(line);
+        if (cnt > (set.max_size() - 1000)) throw runtime_error("Too large file.");
+        if (cnt % 10000 == 0) //every 5000th line, output a message
+            cout << "Processed " << cnt << " elements\n";
     }
-    catch (const std::exception& exc)
-    {
-        std::cerr << exc.what() << std::endl;
-        system("pause");
-        return (EXIT_FAILURE);
-    }
-    catch (...)
-    {
-        std::cerr << "Unknown error. Unable to continue." << std::endl;
-        system("pause");
-        return(EXIT_FAILURE);
-    }
+    if (cnt < 2) throw invalid_argument("No data?");
+    for (auto& el: set)
+        output << el << "\n";
+    cout << "Processed " << cnt
+         << " elements. Removed " << cnt - set.size() << " lines"
+         << (com ? "and removed " + to_string(comms) + " comments" : "") << endl;
+    system("pause");
+    return EXIT_SUCCESS;
+}
+catch (const exception& exc) {
+    cerr << exc.what() << endl;
+    system("pause");
+    return (EXIT_FAILURE);
+}
+catch (...) {
+    cerr << "Unknown error. Unable to continue." << endl;
+    system("pause");
+    return (EXIT_FAILURE);
 }
