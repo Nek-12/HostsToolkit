@@ -1,5 +1,4 @@
 #pragma once
-#include <filesystem>
 #include <vector>
 #include <set>
 #include <map>
@@ -8,24 +7,29 @@
 #include <fstream>
 #include <cassert>
 #include <sstream>
-#include <X11/Xlib.h>
-
 #ifdef __linux__
 #define HOSTS "/etc/hosts"
 #endif
 #ifdef _WIN32
+#define TIME_MULTIPLIER 80000/180
 #define HOSTS "C:/Windows/System32/Drivers/etc/hosts"
 #endif
 
-class Data {
+#include <QWidget>
+
+namespace Ui {
+class Entry;
+}
+
+class Entry : public QWidget
+{
+    Q_OBJECT
+
 public:
-    static Data& get() {
-        static Data instance;
-        return instance;
-    }
-    void update();
-    std::vector<std::string> files;
-    bool sys_loaded = false;
+    explicit Entry(QWidget *parent = nullptr);
+    ~Entry() override;
+
 private:
-    Data() = default;
+    Ui::Entry *ui;
 };
+

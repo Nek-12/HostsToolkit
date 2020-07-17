@@ -17,7 +17,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
 
 find_package(Qt5 COMPONENTS Widgets LinguistTools REQUIRED)
 
-add_executable(HT main.cpp mainwindow.cpp mainwindow.h mainwindow.ui ${TS_FILES} )
+add_executable(HT mainwindow.h main.cpp mainwindow.cpp entry.cpp entry.h mainwindow.ui entry.ui ${TS_FILES} )
+
 target_link_libraries(HT PRIVATE Qt5::Widgets)
 
 qt5_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
