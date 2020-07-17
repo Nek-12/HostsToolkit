@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.15)
-project(HT)
+project(HT LANGUAGES CXX)
+
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(TS_FILES HT_ru_RU.ts)
 
 message("CMAKE_CXX_FLAGS_DEBUG is ${CMAKE_CXX_FLAGS_DEBUG}")
 message("CMAKE_CXX_FLAGS_RELEASE is ${CMAKE_CXX_FLAGS_RELEASE}")
@@ -9,6 +15,9 @@ set(CMAKE_CXX_STANDARD 20)
 set(GCC_COVERAGE_COMPILE_FLAGS "-unicode -Wall -Wextra -Wfloat-equal -Wundef -Wcast-align -Wwrite-strings -Wlogical-op -Wredundant-decls -Wshadow -Woverloaded-virtual")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
 
-find_package(Qt5Widgets REQUIRED)
-add_executable(HT  main.cpp main.h script.cpp)
-target_link_libraries(HT Qt5::Widgets)
+find_package(Qt5 COMPONENTS Widgets LinguistTools REQUIRED)
+
+add_executable(HT main.cpp mainwindow.cpp mainwindow.h mainwindow.ui ${TS_FILES} )
+target_link_libraries(HT PRIVATE Qt5::Widgets)
+
+qt5_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
