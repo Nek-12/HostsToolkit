@@ -1,22 +1,4 @@
-#include <iostream>
-#include <set>
-#include <fstream>
 /*
-using namespace std;
-bool yesNo() {
-    while (true) {
-        string input;
-        cin >> input;
-        switch (stoi(input)) {
-            case 'y':
-                return true;
-            case 'n':
-                return false;
-            default:
-                break;
-        }
-    }
-}
 
 int main(int argc, char* argv[]) try {
     string path;

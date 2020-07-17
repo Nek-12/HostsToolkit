@@ -1,6 +1,4 @@
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
-
+#pragma once
 #include <QMainWindow>
 
 QT_BEGIN_NAMESPACE
@@ -12,10 +10,14 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
+    explicit MainWindow(QWidget *parent = nullptr);
+    ~MainWindow() override;
+
+public slots:
+    void process_files();
+    void sys_load();
+
 
 private:
     Ui::MainWindow *ui;
 };
-#endif // MAINWINDOW_H
