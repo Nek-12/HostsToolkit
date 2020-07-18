@@ -2,6 +2,7 @@
 #include "./ui_mainwindow.h"
 #include <QDebug>
 #include <QtWidgets/QFileDialog>
+#include <QString>
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
     ui->setupUi(this);
@@ -11,17 +12,22 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(this,&MainWindow::progress,this,&MainWindow::upd_progress_bar);
     connect(ui->SaveToButton, &QPushButton::clicked, this, &MainWindow::save_to);
     connect(ui->AddCustomEntryButton,&QPushButton::clicked,this, &MainWindow::append_entry);
+    connect(ui->CustomEntryField,&QLineEdit::returnPressed,this, &MainWindow::append_entry);
     connect(ui->BrowseFileButton, &QPushButton::clicked,this, &MainWindow::open_file);
+    connect(ui->CustomEntriesList, &QListWidget::itemActivated, ui->CustomEntriesList,&QListWidget::openPersistentEditor);
+    connect(ui->CustomEntriesList, &QListWidget::currentItemChanged, ui->CustomEntriesList, &QListWidget::closePersistentEditor);
+    connect(ui->DeleteListItemButton, &QPushButton::clicked, this, &MainWindow::del_selected_list_entry);
+
 }
 
 std::string MainWindow::prepare_file() {
     std::stringstream ss, ret;
     qulonglong commented_lines = 0, total = 0, removed = 0;
     if (ui->AddCreditsBox->isChecked())
-        ret << "This file was generated with HostsToolkit: https://github.com/Nek-12/HostsToolkit \n";
+        ret << "#This file was generated with HostsToolkit: https://github.com/Nek-12/HostsToolkit \n";
     ret << "\n# ------------- C U S T O M ------------- \n";
     for (const auto& l : customlines)
-        ret << l << '\n'; //Add custom
+        ret << l->text().toStdString() << '\n'; //Add custom
     for (const auto& f : files) {
         ss << f << '\n'; //Concatenate the files
     }
@@ -63,15 +69,15 @@ std::string MainWindow::prepare_file() {
         }
     }
     removed = total_lines - total;
-    auto msg = QString("Done! \t Comments removed: %1 \t "
-                  "Total lines written: %2 \t "
+    auto msg = QString("Generated file \t Comments removed: %1 \t "
+                  "Total lines from files: %2 \t "
                   "Total lines removed: %3 ")
             .arg(commented_lines)
             .arg(total)
             .arg(removed);
     std::string str;
     if (ui->AddCreditsBox->isChecked())
-        str.append(msg.toStdString()+'\n');
+        str.append('#'+msg.toStdString()+'\n');
     ui->Stats->showMessage(msg);
     emit progress(100);
     return str+ret.str();
@@ -141,23 +147,24 @@ void MainWindow::update_stats() {
 
 }
 bool MainWindow::process_line(std::string& line) {
- bool changed = false;
     if (ui->RemCommentsBox->isChecked()) { //remove comments
         auto it = line.find('#');
         if (it != std::string::npos) {
             line.erase(it);
-            changed = true;
+            if (std::all_of(line.begin(),line.end(),isspace)) //Check if only whitespace remains
+                line.clear();
+            return true;
         }
     }
-    if (std::all_of(line.begin(),line.end(),isspace)) //Check if only whitespace remains
-        line.clear();
-    return changed;
+    return false;
 }
 void MainWindow::upd_progress_bar(int val) {
     ui->ProgressBar->setTextVisible(true);
     ui->ProgressBar->setValue(val);
 }
 void MainWindow::save_to() {
+    ui->ApplyFileButton->setChecked(!pending);
+    ui->SaveToButton->setChecked(!pending);
     if (!pending || (files.empty() && customlines.empty()) ) return;
     QString path;
     QFileDialog d(this,"Select the destination file",HOSTS);
@@ -167,27 +174,21 @@ void MainWindow::save_to() {
     qDebug() << path;
     if (path != "") {
         std::ofstream f(path.toStdString());
-        if (!f) {
-            ui->Stats->showMessage(
-                    "Couldn't write your file! Select another location or launch the app with admin privileges");
-            return;
-        }
-        else {
+        if (f) {
             f << prepare_file();
             pending = false;
-            ui->ApplyFileButton->setChecked(!pending);
-            ui->SaveToButton->setChecked(!pending);
             return;
         }
+        else
+            ui->Stats->showMessage(
+                    "Couldn't write your file! Select another location or launch the app with admin privileges");
     }
 }
 
-MainWindow::~MainWindow() {
-    delete ui;
-}
 void MainWindow::append_entry() {
     auto entry = ui->CustomEntryField->text();
-    customlines.push_back(entry.toStdString());
+    auto pitem = new QListWidgetItem(entry, ui->CustomEntriesList);
+    customlines.push_back(pitem);
     ui->Stats->showMessage("Added custom line: " + entry);
     ui->CustomEntryField->setText("");
     emit updated();
@@ -204,10 +205,12 @@ void MainWindow::load_file(const std::string& path) {
     std::ifstream f(path);
     if (f) {
         std::stringstream ss;
-        filepaths.emplace_back(path);
+        auto pitem = new QListWidgetItem(path.c_str(),ui->FileList);
+        filepaths.push_back(pitem);
         ss << f.rdbuf();
         files.push_back(ss.str());
         qDebug() << "Added the file " << path.c_str(); //TODO: Why isn't string working?
+
         emit updated();
     }
     else {
@@ -216,6 +219,12 @@ void MainWindow::load_file(const std::string& path) {
     }
 }
 
-
-
-
+MainWindow::~MainWindow() {
+    delete ui;
+}
+void MainWindow::del_selected_list_entry() {
+    auto pitem = ui->CustomEntriesList->currentItem();
+    if (pitem) {
+        delete pitem;
+    }
+}

@@ -12,12 +12,13 @@ message("CMAKE_CXX_FLAGS_RELEASE is ${CMAKE_CXX_FLAGS_RELEASE}")
 message("CMAKE_CXX_FLAGS_MINSIZEREL is ${CMAKE_CXX_FLAGS_MINSIZEREL}")
 
 set(CMAKE_CXX_STANDARD 14)
-set(GCC_COVERAGE_COMPILE_FLAGS "-unicode -Wall -Wextra -Wfloat-equal -Wundef -Wcast-align -Wwrite-strings -Wlogical-op -Wredundant-decls -Wshadow -Woverloaded-virtual")
+set(GCC_COVERAGE_COMPILE_FLAGS "-unicode -Wall -Wextra -Wfloat-equal -Wundef -Wcast-align -Wwrite-strings \
+-Wlogical-op -Wredundant-decls -Wshadow -Woverloaded-virtual")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
 
 find_package(Qt5 COMPONENTS Widgets LinguistTools REQUIRED)
 
-add_executable(HT mainwindow.h main.cpp mainwindow.cpp entry.cpp entry.h mainwindow.ui entry.ui ${TS_FILES} )
+add_executable(HT mainwindow.h main.cpp mainwindow.cpp mainwindow.ui ${TS_FILES} )
 
 target_link_libraries(HT PRIVATE Qt5::Widgets)
 
