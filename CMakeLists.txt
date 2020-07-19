@@ -18,6 +18,9 @@ set(GCC_COVERAGE_COMPILE_FLAGS "-unicode -static -Wall -Wextra -Wfloat-equal -Wu
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
 
 qt5_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
-add_executable(HT WIN32 mainwindow.h main.cpp mainwindow.cpp mainwindow.ui res.qrc ${TS_FILES} )
-# remove WIN32 to enable console
+add_executable(HT mainwindow.h main.cpp mainwindow.cpp mainwindow.ui res.qrc ${TS_FILES} )
+if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel" OR CMAKE_BUILD_TYPE STREQUAL "Release")
+    set_property(TARGET PROPERTY WIN32_EXECUTABLE true)
+    message("CONSOLE DISABLED")
+endif()
 target_link_libraries(HT PRIVATE Qt5::Widgets Qt5::Core Qt5::Gui)

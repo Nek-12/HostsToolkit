@@ -5,13 +5,13 @@ void crash(const std::string& msg = "", const std::exception& e = std::runtime_e
     f << e.what() << std::endl << msg << std::endl;
 }
 
-int WinMain(int argc, char *argv[]) try {
+int main(int argc, char *argv[]) try {
     if (std::string(HOSTS).empty()) throw std::runtime_error("Your OS is not supported yet.");
     QApplication a(argc, argv);
     MainWindow w;
+    if (QCoreApplication::arguments().size() > 1)
+        w.load_file(QCoreApplication::arguments().at(1).toStdString());
     w.show();
-    if (argc > 1)
-        w.load_file(argv[1]);
     return a.exec();
 }
 catch (const std::exception& exc) {

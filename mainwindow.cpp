@@ -186,7 +186,6 @@ void MainWindow::append_entry() {
 }
 void MainWindow::open_file() {
     auto path = QFileDialog::getOpenFileName(this,"Open a text or hosts file",HOSTS);
-    qDebug() << path;
     if (path == HOSTS) {
         sys_load();
         return;
@@ -194,6 +193,7 @@ void MainWindow::open_file() {
     load_file(path.toStdString());
 }
 void MainWindow::load_file(const std::string& path) {
+    qDebug() << "load_file called";
     std::ifstream f(path);
     if (f) {
         std::stringstream ss;
@@ -201,7 +201,6 @@ void MainWindow::load_file(const std::string& path) {
         ss << f.rdbuf();
         files.push_back(ss.str());
         qDebug() << "Added the file " << QString::fromStdString(path);
-
         emit updated();
     }
     else {
