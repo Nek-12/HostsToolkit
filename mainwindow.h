@@ -11,6 +11,7 @@
 #include <QtWidgets/QFileDialog>
 #include <QMessageBox>
 #include <QApplication>
+#include <QTranslator>
 #include <QDebug>
 #ifdef __linux__
 #define HOSTS "/etc/hosts"
@@ -19,8 +20,9 @@
 #define TIME_MULTIPLIER 400
 #define HOSTS "C:/Windows/System32/drivers/etc/hosts"
 #endif
-#define VERSION "1.0.0"
+#define VERSION "3.0.0"
 #define CONFIG_FNAME "custom.txt"
+#define FILEERRORMSG "Couldn't write your file! Select another location or launch the app with admin privileges"
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE

@@ -68,7 +68,7 @@ std::string MainWindow::prepare_file() {
         }
     }
     removed = total_lines - total;
-    auto msg = QString("Generated file: \t Comments removed: %1 \t "
+    auto msg = tr("Generated file: \t Comments removed: %1 \t "
                   "Total lines from files: %2 \t "
                   "Total lines removed: %3 ")
             .arg(commented_lines)
@@ -93,8 +93,7 @@ void MainWindow::apply() {
             return;
         }
         else {
-            ui->Stats->showMessage(
-                    "Couldn't write your file! Select another location or launch the app with admin privileges");
+            ui->Stats->showMessage(tr(FILEERRORMSG));
             return;
         }
     }
@@ -130,7 +129,7 @@ void MainWindow::update_stats() {
 #endif
     total_lines = lines; // remember the value
     qDebug() << lines;
-    ui->Stats->showMessage(QString("Files to merge: %1 \t"
+    ui->Stats->showMessage(tr("Files to merge: %1 \t"
                                    "Lines: %2 \t"
                                    "Comments: %3 \t"
                                    "Seconds added to boot up process (Approximate): %4")
@@ -159,7 +158,7 @@ void MainWindow::upd_progress_bar(int val) {
 void MainWindow::save_to() {
     if (!pending || (files.empty() && customlines.empty()) ) return;
     QString path;
-    QFileDialog d(this,"Select the destination file",HOSTS);
+    QFileDialog d(this,tr("Select the destination file"),HOSTS);
     d.setFileMode(QFileDialog::AnyFile);
     d.selectFile("hosts");
     path = d.getSaveFileName();
@@ -171,8 +170,7 @@ void MainWindow::save_to() {
             return;
         }
         else
-            ui->Stats->showMessage(
-                    "Couldn't write your file! Select another location or launch the app with admin privileges");
+            ui->Stats->showMessage(tr(FILEERRORMSG));
     }
 }
 
@@ -180,12 +178,12 @@ void MainWindow::append_entry() {
     auto entry = ui->CustomEntryField->text();
     auto pitem = new QListWidgetItem(entry, ui->CustomEntriesList);
     customlines.push_back(pitem);
-    ui->Stats->showMessage("Added custom line: " + entry);
+    ui->Stats->showMessage(tr("Added custom line: ") + entry);
     ui->CustomEntryField->setText("");
     emit updated();
 }
 void MainWindow::open_file() {
-    auto path = QFileDialog::getOpenFileName(this,"Open a text or hosts file",HOSTS);
+    auto path = QFileDialog::getOpenFileName(this,tr("Open a text or hosts file"),HOSTS);
     if (path == HOSTS) {
         sys_load();
         return;
@@ -204,13 +202,12 @@ void MainWindow::load_file(const std::string& path) {
         emit updated();
     }
     else {
-        ui->Stats->showMessage(
-                "Couldn't write your file! Select another location or launch the app with admin privileges");
+        ui->Stats->showMessage(tr(FILEERRORMSG));
     }
 }
 
 void MainWindow::display_about() {
-    QMessageBox::about(this,"About HostsToolkit",QString(
+    QMessageBox::about(this,tr("About HostsToolkit"),tr(
             "HostsTools V%1\n"
             "https://github.com/Nek-12/HostsToolkit\n"
             "By Nek-12 \n"

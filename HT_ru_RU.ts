@@ -135,5 +135,44 @@
         <source>Browse for a file...</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="mainwindow.cpp" line="71"/>
+        <source>Generated file: 	 Comments removed: %1 	 Total lines from files: %2 	 Total lines removed: %3 </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="mainwindow.cpp" line="132"/>
+        <source>Files to merge: %1 	Lines: %2 	Comments: %3 	Seconds added to boot up process (Approximate): %4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="mainwindow.cpp" line="161"/>
+        <source>Select the destination file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="mainwindow.cpp" line="181"/>
+        <source>Added custom line: </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="mainwindow.cpp" line="186"/>
+        <source>Open a text or hosts file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="mainwindow.cpp" line="210"/>
+        <source>About HostsToolkit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="mainwindow.cpp" line="210"/>
+        <source>HostsTools V%1
+https://github.com/Nek-12/HostsToolkit
+By Nek-12 
+t.me/Nek_12
+</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 </TS>
