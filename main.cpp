@@ -1,73 +1,24 @@
-#include <iostream>
-#include <set>
-#include <fstream>
-#include <conio.h>
+#include "mainwindow.h"
 
-using namespace std;
-bool yesNo() {
-    while (true) {
-        switch (getch()) {
-            case 'y':
-                return true;
-            case 'n':
-                return false;
-            default:
-                break;
-        }
-    }
+void crash(const std::string& msg = "", const std::exception& e = std::runtime_error("Unknown error")) noexcept {
+    std::ofstream f("CRASH.txt");
+    f << e.what() << std::endl << msg << std::endl;
 }
 
-int main(int argc, char* argv[]) try {
-    string path;
+int WinMain(int argc, char *argv[]) try {
+    if (std::string(HOSTS).empty()) throw std::runtime_error("Your OS is not supported yet.");
+    QApplication a(argc, argv);
+    MainWindow w;
+    w.show();
     if (argc > 1)
-        path = argv[1];
-    else {
-        cout << "Hello, type or drag a text file into a window to remove duplicate lines" << endl;
-        getline(cin, path);
-    }
-    cout << "The path is " << path << endl;
-    ifstream f(path);
-    if (!f) throw runtime_error("Error opening input file.");
-    ofstream output(path.append("_dedup"));
-    if (!output) throw runtime_error("Error creating output file.");
-    cout << "Remove comments (everything after) \"#\" ? y/n" << endl;
-    bool com = yesNo();
-    size_t cnt = 0, comms = 0;
-    set<string> set;
-    cout << "Please stand by..." << endl;
-    while (f) {
-        string line;
-        getline(f, line);
-        ++cnt;
-        if (com) {
-            auto it = line.find('#');
-            if (it != string::npos) {
-                line.erase(it);
-                ++comms;
-                if (line.empty()) continue;
-            }
-        }
-        set.insert(line);
-        if (cnt > (set.max_size() - 1000)) throw runtime_error("Too large file.");
-        if (cnt % 10000 == 0) //every 5000th line, output a message
-            cout << "Processed " << cnt << " elements\n";
-    }
-    if (cnt < 2) throw invalid_argument("No data?");
-    for (auto& el: set)
-        output << el << "\n";
-    cout << "Processed " << cnt
-         << " elements. Removed " << cnt - set.size() << " lines"
-         << (com ? "and removed " + to_string(comms) + " comments" : "") << endl;
-    system("pause");
-    return EXIT_SUCCESS;
+        w.load_file(argv[1]);
+    return a.exec();
 }
-catch (const exception& exc) {
-    cerr << exc.what() << endl;
-    system("pause");
-    return (EXIT_FAILURE);
+catch (const std::exception& exc) {
+    crash("Contact the developer on github: https://github.com/Nek-12/HostsToolkit",exc);
+    return(EXIT_FAILURE);
 }
 catch (...) {
-    cerr << "Unknown error. Unable to continue." << endl;
-    system("pause");
+    crash("Contact the developer on github: https://github.com/Nek-12/HostsToolkit");
     return (EXIT_FAILURE);
 }
