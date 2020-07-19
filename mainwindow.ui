@@ -35,8 +35,15 @@
    <string extracomment="Console">HostsToolkit</string>
   </property>
   <property name="windowIcon">
-   <iconset>
-    <normaloff>res/icon.png</normaloff>res/icon.png</iconset>
+   <iconset resource="res.qrc">
+    <normaloff>:/icon/icon.ico</normaloff>
+    <normalon>:/icon/icon.ico</normalon>
+    <disabledoff>:/icon/icon.ico</disabledoff>
+    <disabledon>:/icon/icon.ico</disabledon>
+    <activeoff>:/icon/icon.ico</activeoff>
+    <activeon>:/icon/icon.ico</activeon>
+    <selectedoff>:/icon/icon.ico</selectedoff>
+    <selectedon>:/icon/icon.ico</selectedon>:/icon/icon.ico</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QProgressBar" name="ProgressBar">
@@ -148,10 +155,10 @@
      <string>Apply to System</string>
     </property>
     <property name="checkable">
-     <bool>true</bool>
+     <bool>false</bool>
     </property>
     <property name="checked">
-     <bool>true</bool>
+     <bool>false</bool>
     </property>
     <property name="autoRepeatDelay">
      <number>0</number>
@@ -188,18 +195,18 @@
      <string>Save...</string>
     </property>
     <property name="checkable">
-     <bool>true</bool>
+     <bool>false</bool>
     </property>
     <property name="checked">
-     <bool>true</bool>
+     <bool>false</bool>
     </property>
    </widget>
    <widget class="QPushButton" name="LoadSystemHosts">
     <property name="geometry">
      <rect>
-      <x>522</x>
-      <y>16</y>
-      <width>201</width>
+      <x>520</x>
+      <y>40</y>
+      <width>181</width>
       <height>41</height>
      </rect>
     </property>
@@ -210,7 +217,7 @@
      </size>
     </property>
     <property name="text">
-     <string>Load system hosts</string>
+     <string>Load system</string>
     </property>
     <property name="checkable">
      <bool>true</bool>
@@ -226,8 +233,8 @@
     <property name="geometry">
      <rect>
       <x>520</x>
-      <y>80</y>
-      <width>201</width>
+      <y>90</y>
+      <width>181</width>
       <height>41</height>
      </rect>
     </property>
@@ -321,12 +328,15 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>30</y>
+      <y>40</y>
       <width>501</width>
-      <height>211</height>
+      <height>201</height>
      </rect>
     </property>
     <property name="acceptDrops">
+     <bool>true</bool>
+    </property>
+    <property name="tabKeyNavigation">
      <bool>true</bool>
     </property>
    </widget>
@@ -335,8 +345,8 @@
      <rect>
       <x>0</x>
       <y>0</y>
-      <width>511</width>
-      <height>21</height>
+      <width>431</width>
+      <height>31</height>
      </rect>
     </property>
     <property name="text">
@@ -352,7 +362,7 @@
       <x>0</x>
       <y>250</y>
       <width>421</width>
-      <height>31</height>
+      <height>41</height>
      </rect>
     </property>
     <property name="text">
@@ -388,9 +398,24 @@
      <string>About</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="DeleteFileButton">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>0</y>
+      <width>81</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Delete</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QStatusBar" name="Stats"/>
  </widget>
- <resources/>
+ <resources>
+  <include location="res.qrc"/>
+ </resources>
  <connections/>
 </ui>

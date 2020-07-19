@@ -16,6 +16,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->CustomEntriesList, &QListWidget::currentItemChanged, ui->CustomEntriesList, &QListWidget::closePersistentEditor);
     connect(ui->DeleteListItemButton, &QPushButton::clicked, this, &MainWindow::del_selected_list_entry);
     connect(ui->AboutButton,&QPushButton::clicked, this,&MainWindow::display_about);
+    connect(ui->DeleteFileButton, &QPushButton::clicked, this, &MainWindow::delete_selected_file);
 
 }
 
@@ -68,7 +69,7 @@ std::string MainWindow::prepare_file() {
         }
     }
     removed = total_lines - total;
-    auto msg = QString("Generated file \t Comments removed: %1 \t "
+    auto msg = QString("Generated file: \t Comments removed: %1 \t "
                   "Total lines from files: %2 \t "
                   "Total lines removed: %3 ")
             .arg(commented_lines)
@@ -88,8 +89,8 @@ void MainWindow::apply() {
         if (f) {
             f << prepare_file();
             pending = false;
-            ui->ApplyFileButton->setChecked(!pending);
-            ui->SaveToButton->setChecked(!pending);
+            ui->ApplyFileButton->setEnabled(pending);
+            ui->SaveToButton->setEnabled(pending);
             return;
         }
         else {
@@ -101,20 +102,16 @@ void MainWindow::apply() {
 }
 
 void MainWindow::sys_load() {
-    ui->LoadSystemHosts->setChecked(sys_loaded);
     if (sys_loaded) return;
-    ui->LoadSystemHosts->setChecked(true);
+    ui->LoadSystemHosts->setEnabled(false);
     sys_loaded = true;
-    auto font = ui->LoadSystemHosts->font();
-    font.setStrikeOut(true);
-    ui->LoadSystemHosts->setFont(font);
     load_file(HOSTS);
 }
 
 void MainWindow::update_stats() {
     pending = true;
-    ui->ApplyFileButton->setChecked(!pending);
-    ui->SaveToButton->setChecked(!pending);
+    ui->ApplyFileButton->setEnabled(pending);
+    ui->SaveToButton->setEnabled(pending);
     qulonglong lines = customlines.size(), comments = 0, filenum = files.size(), seconds_to_load;
     char symbol;
     std::string opt;
@@ -162,15 +159,12 @@ void MainWindow::upd_progress_bar(int val) {
     ui->ProgressBar->setValue(val);
 }
 void MainWindow::save_to() {
-    ui->ApplyFileButton->setChecked(!pending);
-    ui->SaveToButton->setChecked(!pending);
     if (!pending || (files.empty() && customlines.empty()) ) return;
     QString path;
     QFileDialog d(this,"Select the destination file",HOSTS);
     d.setFileMode(QFileDialog::AnyFile);
     d.selectFile("hosts");
     path = d.getSaveFileName();
-    qDebug() << path;
     if (path != "") {
         std::ofstream f(path.toStdString());
         if (f) {
@@ -194,6 +188,7 @@ void MainWindow::append_entry() {
 }
 void MainWindow::open_file() {
     auto path = QFileDialog::getOpenFileName(this,"Open a text or hosts file",HOSTS);
+    qDebug() << path;
     if (path == HOSTS) {
         sys_load();
         return;
@@ -219,14 +214,26 @@ void MainWindow::load_file(const std::string& path) {
 }
 
 void MainWindow::display_about() {
-    QMessageBox::about(this,"About HostsTools",QString(
+    QMessageBox::about(this,"About HostsToolkit",QString(
             "HostsTools V%1\n"
-            "https://github.com/Nek-12/HostsToolkit"
+            "https://github.com/Nek-12/HostsToolkit\n"
             "By Nek-12 \n"
             "t.me/Nek_12\n"
             ).arg(VERSION));
 }
 
+void MainWindow::delete_selected_file() {
+    auto item = ui->FileList->currentItem();
+    if (!item) return;
+    if (item->text() == HOSTS) {
+        sys_loaded = false;
+        ui->LoadSystemHosts->setEnabled(true);
+    }
+    auto row = ui->FileList->currentRow();
+    files.erase(files.begin()+row);
+    filepaths.erase(filepaths.begin()+row);
+    delete item;
+}
 
 void MainWindow::del_selected_list_entry() {
     auto pitem = ui->CustomEntriesList->currentItem();

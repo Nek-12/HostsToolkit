@@ -5,7 +5,7 @@ void crash(const std::string& msg = "", const std::exception& e = std::runtime_e
     f << e.what() << std::endl << msg << std::endl;
 }
 
-int main(int argc, char *argv[]) try {
+int WinMain(int argc, char *argv[]) try {
     if (std::string(HOSTS).empty()) throw std::runtime_error("Your OS is not supported yet.");
     QApplication a(argc, argv);
     MainWindow w;

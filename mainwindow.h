@@ -17,7 +17,7 @@
 #endif
 #ifdef _WIN32
 #define TIME_MULTIPLIER 80000/180
-#define HOSTS "C:/Windows/System32/Drivers/etc/hosts"
+#define HOSTS "C:/Windows/System32/drivers/etc/hosts"
 #endif
 #define VERSION "1.0.0"
 QT_BEGIN_NAMESPACE
@@ -45,6 +45,7 @@ public slots:
     void open_file();
     void del_selected_list_entry();
     void display_about();
+    void delete_selected_file();
 signals:
     void updated();
     void progress(int);
