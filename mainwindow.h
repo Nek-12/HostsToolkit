@@ -3,10 +3,15 @@
 #include <set>
 #include <map>
 #include <string>
-#include <iostream>
 #include <fstream>
 #include <cassert>
 #include <sstream>
+#include <QMainWindow>
+#include <QtWidgets/QListWidgetItem>
+#include <QtWidgets/QFileDialog>
+#include <QMessageBox>
+#include <QApplication>
+#include <QDebug>
 #ifdef __linux__
 #define HOSTS "/etc/hosts"
 #endif
@@ -14,9 +19,7 @@
 #define TIME_MULTIPLIER 80000/180
 #define HOSTS "C:/Windows/System32/Drivers/etc/hosts"
 #endif
-#include <QMainWindow>
-#include <QtWidgets/QListWidgetItem>
-
+#define VERSION "1.0.0"
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -41,6 +44,7 @@ public slots:
     void append_entry();
     void open_file();
     void del_selected_list_entry();
+    void display_about();
 signals:
     void updated();
     void progress(int);

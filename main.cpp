@@ -1,6 +1,9 @@
 #include "mainwindow.h"
-#include <QApplication>
 
+void crash(const std::string& msg = "", const std::exception& e = std::runtime_error("Unknown error")) noexcept {
+    std::ofstream f("CRASH.txt");
+    f << e.what() << std::endl << msg << std::endl;
+}
 
 int main(int argc, char *argv[]) try {
     if (std::string(HOSTS).empty()) throw std::runtime_error("Your OS is not supported yet.");
@@ -12,11 +15,10 @@ int main(int argc, char *argv[]) try {
     return a.exec();
 }
 catch (const std::exception& exc) {
-    std::cerr << exc.what() << std::endl
-    << "Contact the developer on github: https://github.com/Nek-12/HostsToolkit" << std::endl;
-    return (EXIT_FAILURE);
+    crash("Contact the developer on github: https://github.com/Nek-12/HostsToolkit",exc);
+    return(EXIT_FAILURE);
 }
 catch (...) {
-    std::cerr << "Unknown error. Unable to continue." << std::endl;
+    crash("Contact the developer on github: https://github.com/Nek-12/HostsToolkit");
     return (EXIT_FAILURE);
 }

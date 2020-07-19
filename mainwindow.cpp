@@ -1,8 +1,6 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
-#include <QDebug>
-#include <QtWidgets/QFileDialog>
-#include <QString>
+
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
     ui->setupUi(this);
@@ -17,12 +15,13 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->CustomEntriesList, &QListWidget::itemActivated, ui->CustomEntriesList,&QListWidget::openPersistentEditor);
     connect(ui->CustomEntriesList, &QListWidget::currentItemChanged, ui->CustomEntriesList, &QListWidget::closePersistentEditor);
     connect(ui->DeleteListItemButton, &QPushButton::clicked, this, &MainWindow::del_selected_list_entry);
+    connect(ui->AboutButton,&QPushButton::clicked, this,&MainWindow::display_about);
 
 }
 
 std::string MainWindow::prepare_file() {
     std::stringstream ss, ret;
-    qulonglong commented_lines = 0, total = 0, removed = 0;
+    qulonglong commented_lines = 0, total, removed;
     if (ui->AddCreditsBox->isChecked())
         ret << "#This file was generated with HostsToolkit: https://github.com/Nek-12/HostsToolkit \n";
     ret << "\n# ------------- C U S T O M ------------- \n";
@@ -36,7 +35,7 @@ std::string MainWindow::prepare_file() {
         std::set<std::string> strset;
         while (ss) { // Process lines
             double i = double(strset.size())/total_lines;
-            emit progress((i*100));
+            emit progress(int(i*100));
             qDebug() << i;
             std::string line;
             getline(ss, line);
@@ -54,7 +53,7 @@ std::string MainWindow::prepare_file() {
         ret << "\n# ------------- MERGED TOGETHER ------------- \n";
         while (ss) { // Process lines
             double i = strvec.size()/double(total_lines);
-            emit progress(i/total_lines*100);
+            emit progress(int(i/total_lines*100));
             qDebug() << i;
             std::string line;
             getline(ss, line);
@@ -116,13 +115,13 @@ void MainWindow::update_stats() {
     pending = true;
     ui->ApplyFileButton->setChecked(!pending);
     ui->SaveToButton->setChecked(!pending);
-    qulonglong lines = customlines.size(), comments = 0, filenum = files.size(), seconds_to_load = 0;
+    qulonglong lines = customlines.size(), comments = 0, filenum = files.size(), seconds_to_load;
     char symbol;
     std::string opt;
     size_t parts = files.size();
     double i = 0;
     for (auto f : files) {
-        emit progress(++i/parts*100);
+        emit progress(int(++i/parts*100));
         symbol = '#';
         auto pred = [&symbol](char ch) { return ch == symbol; };
         comments += std::count_if(f.begin(), f.end(), pred);
@@ -219,12 +218,21 @@ void MainWindow::load_file(const std::string& path) {
     }
 }
 
-MainWindow::~MainWindow() {
-    delete ui;
+void MainWindow::display_about() {
+    QMessageBox::about(this,"About HostsTools",QString(
+            "HostsTools V%1\n"
+            "https://github.com/Nek-12/HostsToolkit"
+            "By Nek-12 \n"
+            "t.me/Nek_12\n"
+            ).arg(VERSION));
 }
+
+
 void MainWindow::del_selected_list_entry() {
     auto pitem = ui->CustomEntriesList->currentItem();
-    if (pitem) {
-        delete pitem;
-    }
+    delete pitem;
+}
+
+MainWindow::~MainWindow() {
+    delete ui;
 }

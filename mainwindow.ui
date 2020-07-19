@@ -43,7 +43,7 @@
     <property name="geometry">
      <rect>
       <x>520</x>
-      <y>580</y>
+      <y>570</y>
       <width>461</width>
       <height>41</height>
      </rect>
@@ -72,8 +72,8 @@
      <rect>
       <x>520</x>
       <y>140</y>
-      <width>461</width>
-      <height>37</height>
+      <width>421</width>
+      <height>41</height>
      </rect>
     </property>
     <property name="minimumSize">
@@ -107,9 +107,9 @@
    <widget class="QPushButton" name="AddCustomEntryButton">
     <property name="geometry">
      <rect>
-      <x>920</x>
-      <y>80</y>
-      <width>61</width>
+      <x>950</x>
+      <y>140</y>
+      <width>41</width>
       <height>41</height>
      </rect>
     </property>
@@ -160,7 +160,7 @@
      <number>0</number>
     </property>
     <property name="autoDefault">
-     <bool>false</bool>
+     <bool>true</bool>
     </property>
     <property name="default">
      <bool>false</bool>
@@ -286,10 +286,10 @@
    <widget class="QListWidget" name="CustomEntriesList">
     <property name="geometry">
      <rect>
-      <x>0</x>
-      <y>280</y>
-      <width>521</width>
-      <height>361</height>
+      <x>10</x>
+      <y>290</y>
+      <width>501</width>
+      <height>331</height>
      </rect>
     </property>
     <property name="acceptDrops">
@@ -320,10 +320,10 @@
    <widget class="QListWidget" name="FileList">
     <property name="geometry">
      <rect>
-      <x>0</x>
-      <y>40</y>
-      <width>521</width>
-      <height>201</height>
+      <x>10</x>
+      <y>30</y>
+      <width>501</width>
+      <height>211</height>
      </rect>
     </property>
     <property name="acceptDrops">
@@ -335,12 +335,12 @@
      <rect>
       <x>0</x>
       <y>0</y>
-      <width>521</width>
-      <height>41</height>
+      <width>511</width>
+      <height>21</height>
      </rect>
     </property>
     <property name="text">
-     <string>Files</string>
+     <string>Files to merge:</string>
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
@@ -350,9 +350,9 @@
     <property name="geometry">
      <rect>
       <x>0</x>
-      <y>240</y>
+      <y>250</y>
       <width>421</width>
-      <height>41</height>
+      <height>31</height>
      </rect>
     </property>
     <property name="text">
@@ -365,14 +365,27 @@
    <widget class="QPushButton" name="DeleteListItemButton">
     <property name="geometry">
      <rect>
-      <x>433</x>
-      <y>240</y>
+      <x>430</x>
+      <y>250</y>
       <width>81</width>
-      <height>41</height>
+      <height>31</height>
      </rect>
     </property>
     <property name="text">
      <string>Delete</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="AboutButton">
+    <property name="geometry">
+     <rect>
+      <x>920</x>
+      <y>10</y>
+      <width>71</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>About</string>
     </property>
    </widget>
   </widget>
