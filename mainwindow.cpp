@@ -1,7 +1,6 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 
-
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
     ui->setupUi(this);
     connect(ui->ApplyFileButton, &QPushButton::clicked, this, &MainWindow::apply);
@@ -17,7 +16,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->DeleteListItemButton, &QPushButton::clicked, this, &MainWindow::del_selected_list_entry);
     connect(ui->AboutButton,&QPushButton::clicked, this,&MainWindow::display_about);
     connect(ui->DeleteFileButton, &QPushButton::clicked, this, &MainWindow::delete_selected_file);
-
+    load_custom();
 }
 
 std::string MainWindow::prepare_file() {
@@ -39,7 +38,7 @@ std::string MainWindow::prepare_file() {
             emit progress(int(i*100));
             qDebug() << i;
             std::string line;
-            getline(ss, line);
+            std::getline(ss, line);
             commented_lines += process_line(line); //remove comments if needed and increment the counter
             if (line.empty()) continue;
             strset.insert(line); //set does not store duplicates
@@ -57,7 +56,7 @@ std::string MainWindow::prepare_file() {
             emit progress(int(i/total_lines*100));
             qDebug() << i;
             std::string line;
-            getline(ss, line);
+            std::getline(ss, line);
             commented_lines += process_line(line); //remove comments if needed
             if (line.empty()) continue;
             strvec.push_back(line);
@@ -123,7 +122,6 @@ void MainWindow::update_stats() {
         auto pred = [&symbol](char ch) { return ch == symbol; };
         comments += std::count_if(f.begin(), f.end(), pred);
         symbol = '\n';
-        // TODO: Fix spamming ##### breaking the number of comments
         lines += std::count_if(f.begin(), f.end(), pred);
     }
     emit progress(100);
@@ -199,11 +197,10 @@ void MainWindow::load_file(const std::string& path) {
     std::ifstream f(path);
     if (f) {
         std::stringstream ss;
-        auto pitem = new QListWidgetItem(path.c_str(),ui->FileList);
-        filepaths.push_back(pitem);
+        filepaths.push_back(new QListWidgetItem(QString::fromStdString(path),ui->FileList));
         ss << f.rdbuf();
         files.push_back(ss.str());
-        qDebug() << "Added the file " << path.c_str(); //TODO: Why isn't string working?
+        qDebug() << "Added the file " << QString::fromStdString(path);
 
         emit updated();
     }
@@ -236,10 +233,30 @@ void MainWindow::delete_selected_file() {
 }
 
 void MainWindow::del_selected_list_entry() {
-    auto pitem = ui->CustomEntriesList->currentItem();
-    delete pitem;
+    delete ui->CustomEntriesList->currentItem();
+}
+
+void MainWindow::load_custom() {
+    std::ifstream f(CONFIG_FNAME);
+    while (f) {
+        std::string s;
+        std::getline(f,s);
+        if (!s.empty()) {
+            customlines.emplace_back(new QListWidgetItem(QString::fromStdString(s),ui->CustomEntriesList));
+        }
+    }
 }
 
 MainWindow::~MainWindow() {
     delete ui;
 }
+
+void MainWindow::closeEvent(QCloseEvent* bar) {
+    std::ofstream f(CONFIG_FNAME);
+    if (f) {
+        for (auto l : customlines)
+            f << l->text().toStdString() << '\n';
+    }
+    QWidget::closeEvent(bar);
+}
+

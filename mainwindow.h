@@ -20,6 +20,7 @@
 #define HOSTS "C:/Windows/System32/drivers/etc/hosts"
 #endif
 #define VERSION "1.0.0"
+#define CONFIG_FNAME "custom.txt"
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -33,6 +34,7 @@ public:
     ~MainWindow() override;
     std::string prepare_file();
     void load_file(const std::string& path);
+    void load_custom();
 
 
 public slots:
@@ -52,6 +54,7 @@ signals:
 
 
 private:
+    void closeEvent(QCloseEvent *bar) override;
     bool process_line(std::string& );
     std::vector<std::string> files;
     std::vector<QListWidgetItem* > filepaths;
