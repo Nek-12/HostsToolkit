@@ -111,7 +111,7 @@ void MainWindow::update_stats() {
     pending = true;
     ui->ApplyFileButton->setEnabled(pending);
     ui->SaveToButton->setEnabled(pending);
-    qulonglong lines = customlines.size(), comments = 0, filenum = files.size(), seconds_to_load;
+    qulonglong lines = customlines.size(), comments = 0, filenum = files.size(), seconds_to_load = 0;
     char symbol;
     std::string opt;
     size_t parts = files.size();
@@ -126,7 +126,7 @@ void MainWindow::update_stats() {
     }
     emit progress(100);
 #ifdef TIME_MULTIPLIER
-    seconds_to_load = lines/TIME_MULTIPLIER;
+    seconds_to_load = qulonglong(lines/TIME_MULTIPLIER);
 #endif
     total_lines = lines; // remember the value
     qDebug() << lines;

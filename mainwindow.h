@@ -16,7 +16,7 @@
 #define HOSTS "/etc/hosts"
 #endif
 #ifdef _WIN32
-#define TIME_MULTIPLIER 80000/180
+#define TIME_MULTIPLIER 400
 #define HOSTS "C:/Windows/System32/drivers/etc/hosts"
 #endif
 #define VERSION "1.0.0"
