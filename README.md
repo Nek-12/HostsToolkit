@@ -6,12 +6,12 @@ Features:
 * Adding statistics  
 * Adding, removing and saving custom entries  
 * Automatically loading and saving to system hosts file  
-* 33mb standalone .exe, not installation, no resources  
+* 33mb standalone .exe, no installer.  
 ## Usage  
-The UI is pretty simple (I'm not a designer :p).  
+The UI is pretty simple (I'm not a designer).  
 On hidden feature is the ability to drag and drop the file onto the program file. 
 This way it will be automatically added to the list. 
 ## TBD
-* Drag and drop into the program window
+* Drag and drop onto the program window
 * Bulk add files from file dialog
 
