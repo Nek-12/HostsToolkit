@@ -13,7 +13,7 @@ message("CMAKE_CXX_FLAGS_RELEASE is ${CMAKE_CXX_FLAGS_RELEASE}")
 message("CMAKE_CXX_FLAGS_MINSIZEREL is ${CMAKE_CXX_FLAGS_MINSIZEREL}")
 
 find_package(Qt5 COMPONENTS Widgets LinguistTools Core Gui REQUIRED)
-set(GCC_COVERAGE_COMPILE_FLAGS "-unicode -static -Wall -Wextra -Wfloat-equal -Wundef -Wcast-align -Wwrite-strings \
+set(GCC_COVERAGE_COMPILE_FLAGS "-unicode -Wall -Wextra -Wfloat-equal -Wundef -Wcast-align -Wwrite-strings \
 -Wlogical-op -Wredundant-decls -Wshadow -Woverloaded-virtual ")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
 

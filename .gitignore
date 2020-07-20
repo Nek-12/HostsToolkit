@@ -220,3 +220,10 @@ fabric.properties
 # executable folders
 rel
 debug
+build
+
+#vscode
+.vscode
+
+# custom entries file
+**/custom.txt

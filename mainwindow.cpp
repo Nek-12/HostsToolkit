@@ -210,7 +210,7 @@ void MainWindow::display_about() {
     QMessageBox::about(this,tr("About HostsToolkit"),tr(
             "HostsTools V%1\n"
             "https://github.com/Nek-12/HostsToolkit\n"
-            "By Nek-12 \n"
+            "By Nek.12 \n"
             "t.me/Nek_12\n"
             ).arg(VERSION));
 }
@@ -255,4 +255,3 @@ void MainWindow::closeEvent(QCloseEvent* bar) {
     }
     QWidget::closeEvent(bar);
 }
-
