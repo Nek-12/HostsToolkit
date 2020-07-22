@@ -227,3 +227,9 @@ build
 
 # custom entries file
 **/custom.txt
+
+# clangd
+.clangd
+
+# tidy
+.clang-tidy

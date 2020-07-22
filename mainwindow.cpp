@@ -19,9 +19,9 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
     load_custom();
 }
 
-std::string MainWindow::prepare_file() {
+auto MainWindow::prepare_file() -> std::string {
     std::stringstream ss, ret;
-    qulonglong commented_lines = 0, total, removed;
+    qulonglong commented_lines = 0, total = 0, removed = 0;
     if (ui->AddCreditsBox->isChecked())
         ret << "#This file was generated with HostsToolkit: https://github.com/Nek-12/HostsToolkit \n";
     ret << "\n# ------------- C U S T O M ------------- \n";
@@ -39,13 +39,13 @@ std::string MainWindow::prepare_file() {
             qDebug() << i;
             std::string line;
             std::getline(ss, line);
-            commented_lines += process_line(line); //remove comments if needed and increment the counter
+            commented_lines += process_line_ip(line); //remove comments if needed and increment the counter
             if (line.empty()) continue;
             strset.insert(line); //set does not store duplicates
         }
         ss.clear();
         total = strset.size();
-        for (auto& s: strset)
+        for (const auto & s: strset)
             ret << s << '\n'; //write every line back
     }
     else { //don't remove duplicates
@@ -57,7 +57,7 @@ std::string MainWindow::prepare_file() {
             qDebug() << i;
             std::string line;
             std::getline(ss, line);
-            commented_lines += process_line(line); //remove comments if needed
+            commented_lines += process_line_ip(line); //remove comments if needed
             if (line.empty()) continue;
             strvec.push_back(line);
         }
@@ -92,10 +92,9 @@ void MainWindow::apply() {
             ui->SaveToButton->setEnabled(pending);
             return;
         }
-        else {
-            ui->Stats->showMessage(tr(FILEERRORMSG));
+        ui->Stats->showMessage(tr(FILEERRORMSG));
             return;
-        }
+
     }
 }
 
@@ -111,7 +110,7 @@ void MainWindow::update_stats() {
     ui->ApplyFileButton->setEnabled(pending);
     ui->SaveToButton->setEnabled(pending);
     qulonglong lines = customlines.size(), comments = 0, filenum = files.size(), seconds_to_load = 0;
-    char symbol;
+    char symbol = 0;
     std::string opt;
     size_t parts = files.size();
     double i = 0;
@@ -139,7 +138,7 @@ void MainWindow::update_stats() {
                                    .arg(seconds_to_load));
 
 }
-bool MainWindow::process_line(std::string& line) {
+auto MainWindow::process_line_ip(std::string& line) -> bool {
     if (ui->RemCommentsBox->isChecked()) { //remove comments
         auto it = line.find('#');
         if (it != std::string::npos) {
@@ -169,14 +168,13 @@ void MainWindow::save_to() {
             pending = false;
             return;
         }
-        else
-            ui->Stats->showMessage(tr(FILEERRORMSG));
+        ui->Stats->showMessage(tr(FILEERRORMSG));
     }
 }
 
 void MainWindow::append_entry() {
     auto entry = ui->CustomEntryField->text();
-    auto pitem = new QListWidgetItem(entry, ui->CustomEntriesList);
+    auto* pitem = new QListWidgetItem(entry, ui->CustomEntriesList);
     customlines.push_back(pitem);
     ui->Stats->showMessage(tr("Added custom line: ") + entry);
     ui->CustomEntryField->setText("");
@@ -250,7 +248,7 @@ MainWindow::~MainWindow() {
 void MainWindow::closeEvent(QCloseEvent* bar) {
     std::ofstream f(CONFIG_FNAME);
     if (f) {
-        for (auto l : customlines)
+        for (auto* l : customlines)
             f << l->text().toStdString() << '\n';
     }
     QWidget::closeEvent(bar);

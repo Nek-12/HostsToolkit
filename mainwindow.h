@@ -1,28 +1,6 @@
 #pragma once
-#include <vector>
-#include <set>
-#include <map>
-#include <string>
-#include <fstream>
-#include <cassert>
-#include <sstream>
-#include <QMainWindow>
-#include <QtWidgets/QListWidgetItem>
-#include <QtWidgets/QFileDialog>
-#include <QMessageBox>
-#include <QApplication>
-#include <QTranslator>
-#include <QDebug>
-#ifdef __linux__
-#define HOSTS "/etc/hosts"
-#endif
-#ifdef _WIN32
-#define TIME_MULTIPLIER 400
-#define HOSTS "C:/Windows/System32/drivers/etc/hosts"
-#endif
-#define VERSION "3.0.0"
-#define CONFIG_FNAME "custom.txt"
-#define FILEERRORMSG "Couldn't write your file! Select another location or launch the app with admin privileges"
+#include "main.h"
+
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -57,10 +35,11 @@ signals:
 
 private:
     void closeEvent(QCloseEvent *bar) override;
-    bool process_line(std::string& );
+    bool process_line_ip(std::string& );
     std::vector<std::string> files;
     std::vector<QListWidgetItem* > filepaths;
-    std::vector<QListWidgetItem* > customlines;
+    std::vector<QListWidgetItem *> customlines;
+    std::vector<QListWidgetItem *> urls;
     bool sys_loaded = false;
     bool pending = false;
     Ui::MainWindow *ui;
