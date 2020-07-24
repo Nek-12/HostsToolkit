@@ -221,6 +221,7 @@ fabric.properties
 rel
 debug
 build
+download
 
 #vscode
 .vscode

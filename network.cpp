@@ -1,123 +1,114 @@
 #include "mainwindow.h"
-#include "ui_mainwindow.h"
-#include "main.h"
-#include <QtNetwork>
-#include <qdebug.h>
-
-QT_BEGIN_NAMESPACE
-class QSslError;
-QT_END_NAMESPACE
-
-class DownloadManager : public QObject {
-  Q_OBJECT
-  QNetworkAccessManager manager;
-  QVector<QNetworkReply *> cur_downloads;
-
-public:
-  DownloadManager();
-  void doDownload(const QUrl &url);
-  static QString saveFileName(const QUrl &url);
-  static bool saveToDisk(const QString &filename, QIODevice *data);
-  static bool isHttpRedirect(QNetworkReply *reply);
-
-public slots:
-  // TODO: Define the slot for downloading
-  //     QUrl url = QUrl::fromEncoded(arg.toLocal8Bit());
-  //     doDownload(url);
-
-  void downloadFinished(QNetworkReply *reply);
-  static void sslErrors(const QList<QSslError> &errors);
-};
 
 DownloadManager::DownloadManager() {
-  connect(&manager, &QNetworkAccessManager::finished, this,
-          &DownloadManager::downloadFinished);
+    connect(&manager, &QNetworkAccessManager::finished, this, &DownloadManager::on_download_finished);
 }
 
-void DownloadManager::doDownload(const QUrl &url) {
-  QNetworkRequest request(url);
-  QNetworkReply* reply = manager.get(request);
+void DownloadManager::do_download(const QUrl &url) {
+    QNetworkRequest request(url);
+    QNetworkReply * reply = manager.get(request);
+    is_finished = false;
 
 #if QT_CONFIG(ssl)
-  connect(reply, &QNetworkReply::sslErrors, this, &DownloadManager::sslErrors);
+    connect(reply, &QNetworkReply::sslErrors, this, &DownloadManager::ssl_errors);
 #endif
 
-  cur_downloads.append(reply);
+    cur_downloads.append(reply);
 }
 
-QString DownloadManager::saveFileName(const QUrl &url) {
-  QString path = url.path();
-  QString basename = QFileInfo(path).fileName();
-
-  if (basename.isEmpty())
-    basename = "hosts";
-
-  if (QFile::exists(basename)) {
-    // already exists, don't overwrite
-    int i = 0;
+QString DownloadManager::get_filename(const QUrl & /*url*/) {
+    QString basename = "hosts";
+    int     i        = 0;
     basename += '_';
     while (QFile::exists(basename + QString::number(i)))
-      ++i;
-
+        ++i;
     basename += QString::number(i);
-  }
-
-  return basename;
+    return DL_FOLDER + basename;
 }
 
-bool DownloadManager::saveToDisk(const QString &filename, QIODevice *data) {
-  QFile file(filename);
-  if (!file.open(QIODevice::WriteOnly)) {
-    qDebug() << "Couldn't open " << filename << "for writing: " << file.errorString()  << '\n';
-    return false;
-  }
+bool DownloadManager::save_file(const QString &filename, QIODevice *data) {
+    QFile file(filename);
+    if (!file.open(QIODevice::ReadWrite)) {
+        qDebug() << "Couldn't open " << filename << "for writing: " << file.errorString() << '\n';
+        return false;
+    }
 
-  file.write(data->readAll());
-  file.close();
+    file.write(data->readAll());
+    file.close();
 
-  return true;
+    return true;
 }
 
-bool DownloadManager::isHttpRedirect(QNetworkReply *reply) {
-  int statusCode =
-      reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-  return statusCode == 301 || statusCode == 302 || statusCode == 303 ||
-         statusCode == 305 || statusCode == 307 || statusCode == 308;
+bool DownloadManager::is_redirected(QNetworkReply *reply) {
+    int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    return statusCode == 301 || statusCode == 302 || statusCode == 303 || statusCode == 305 || statusCode == 307 ||
+           statusCode == 308;
 }
 
-void DownloadManager::sslErrors(const QList<QSslError> &sslErrors) {
+void DownloadManager::ssl_errors(const QList<QSslError> &sslErrors) {
 #if QT_CONFIG(ssl)
-  for (const QSslError &error : sslErrors)
-    qDebug() << "SSL error: " << error.errorString() << '\n';
+    for (const QSslError &error : sslErrors)
+        qDebug() << "SSL error: " << error.errorString() << '\n';
 #else
-  Q_UNUSED(sslErrors);
+    Q_UNUSED(sslErrors);
 #endif
 }
 
-void DownloadManager::downloadFinished(QNetworkReply *reply) {
-  QUrl url = reply->url();
-  if (reply->error()) {
-    qDebug() << "Download of: " <<  url.toEncoded().constData() << "failed: " <<
-            qPrintable(reply->errorString());
-  } else {
-    if (isHttpRedirect(reply)) {
-      qDebug() << "Request was redirected.\n";
+void DownloadManager::on_download_finished(QNetworkReply *reply) {
+    QUrl url = reply->url();
+    if (reply->error()) {
+        qDebug() << "Download of: " << url.toEncoded().constData() << "failed: " << qPrintable(reply->errorString());
     } else {
-      QString filename = saveFileName(url);
-      if (saveToDisk(filename, reply)) {
-        qDebug() << "Download of "
-                 << url.toEncoded().constData()
-                 << " succeeded (saved to) \n" << qPrintable(filename);
-      }
+        if (is_redirected(reply)) {
+            qDebug() << "Request was redirected.\n";
+        } else {
+            QString filename = get_filename(url);
+            if (save_file(filename, reply)) {
+                qDebug() << "Download of " << url.toEncoded().constData() << " succeeded (saved to) \n"
+                         << qPrintable(filename);
+            }
+        }
     }
-  }
 
-  cur_downloads.removeAll(reply);
-  reply->deleteLater();
+    cur_downloads.removeAll(reply);
+    reply->deleteLater();
 
-  if (cur_downloads.isEmpty()) {
-    //TODO: all downloads finished
-    //Do something?
-  }
+    if (cur_downloads.isEmpty()) {
+        is_finished = true;
+    }
 }
-#include "network.moc"
+
+bool DownloadManager::check_url(const QUrl &url) {
+    for (int i = 0; i != SOCKET_RETRY_TIMES; ++i) { // try 5 times
+        QTcpSocket socket;
+        QByteArray buffer;
+        socket.connectToHost(url.host(), 80);
+        if (socket.waitForConnected()) {
+            // Standard http request
+            socket.write("GET / HTTP/1.1\r\n"
+                         "host: " +
+                         url.host().toUtf8() + "\r\n\r\n");
+            if (socket.waitForReadyRead()) {
+                while (socket.bytesAvailable()) {
+                    buffer.append(socket.readAll());
+                    int packetSize = buffer.size();
+                    while (packetSize > 0) {
+                        // Output server response for debugging
+                        qDebug() << "[" << buffer.data() << "]\n";
+
+                        // set Url if 200, 301, or 302 response given assuming that server
+                        // will redirect
+                        if (buffer.contains("200 OK") || buffer.contains("302 Found") || buffer.contains("301 Moved")) {
+                            return true;
+                        }
+                        buffer.remove(0, packetSize);
+                        packetSize = buffer.size();
+
+                    } // while packet size >0
+                }     // while socket.bytes
+
+            } // socket wait for ready read
+        }     // socket write
+    }
+    return false; //after 5 errors
+}

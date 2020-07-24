@@ -335,6 +335,22 @@
        <set>Qt::AlignCenter</set>
       </property>
      </widget>
+     <widget class="QLabel" name="FileStats">
+      <property name="geometry">
+       <rect>
+        <x>510</x>
+        <y>130</y>
+        <width>481</width>
+        <height>331</height>
+       </rect>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::Box</enum>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
      <zorder>CustomEntriesLabel</zorder>
      <zorder>CustomEntriesList</zorder>
      <zorder>CustomEntryField</zorder>
@@ -347,6 +363,7 @@
      <zorder>ProgressBar</zorder>
      <zorder>ApplyFileButton</zorder>
      <zorder>SaveToButton</zorder>
+     <zorder>FileStats</zorder>
     </widget>
     <widget class="QWidget" name="TabSrc">
      <attribute name="title">
