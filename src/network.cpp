@@ -1,4 +1,6 @@
-#include "mainwindow.h"
+#include "network.h"
+#include "src/app.h"
+
 
 DownloadManager::DownloadManager() {
     connect(&manager, &QNetworkAccessManager::finished, this, &DownloadManager::on_download_finished);
@@ -23,11 +25,14 @@ QString DownloadManager::get_filename(const QUrl & /*url*/) {
     while (QFile::exists(basename + QString::number(i)))
         ++i;
     basename += QString::number(i);
-    return DL_FOLDER + basename;
+    return basename;
 }
 
 bool DownloadManager::save_file(const QString &filename, QIODevice *data) {
-    QFile file(filename);
+    if (!std::filesystem::is_directory(DL_FOLDER) || !std::filesystem::exists(DL_FOLDER)) {
+        std::filesystem::create_directory(DL_FOLDER);
+    }
+    QFile file(DL_FOLDER + filename);
     if (!file.open(QIODevice::ReadWrite)) {
         qDebug() << "Couldn't open " << filename << "for writing: " << file.errorString() << '\n';
         return false;
@@ -78,8 +83,8 @@ void DownloadManager::on_download_finished(QNetworkReply *reply) {
     }
 }
 
-bool DownloadManager::check_url(const QUrl &url) {
-    for (int i = 0; i != SOCKET_RETRY_TIMES; ++i) { // try 5 times
+bool DownloadManager::check_url(const QUrl &url, const unsigned retry_times = 3) {
+    for (unsigned i = 0; i != retry_times; ++i) { // try several times
         QTcpSocket socket;
         QByteArray buffer;
         socket.connectToHost(url.host(), 80);
@@ -94,8 +99,7 @@ bool DownloadManager::check_url(const QUrl &url) {
                     int packetSize = buffer.size();
                     while (packetSize > 0) {
                         // Output server response for debugging
-                        qDebug() << "[" << buffer.data() << "]\n";
-
+                        qDebug() << "[" << buffer.data() << "]";
                         // set Url if 200, 301, or 302 response given assuming that server
                         // will redirect
                         if (buffer.contains("200 OK") || buffer.contains("302 Found") || buffer.contains("301 Moved")) {
@@ -105,10 +109,9 @@ bool DownloadManager::check_url(const QUrl &url) {
                         packetSize = buffer.size();
 
                     } // while packet size >0
-                }     // while socket.bytes
-
+                } // while socket.bytes
             } // socket wait for ready read
-        }     // socket write
-    }
-    return false; //after 5 errors
+        } // socket write
+    } // after all trials failed
+    return false;
 }

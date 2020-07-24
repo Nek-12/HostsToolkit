@@ -19,6 +19,6 @@ set(GCC_COVERAGE_COMPILE_FLAGS "-unicode -Wall -Wextra -Wfloat-equal -Wundef -Wc
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
 
 qt5_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
-add_executable(HT WIN32 mainwindow.h main.cpp mainwindow.cpp mainwindow.ui network.cpp res.qrc ${TS_FILES} )
+add_executable(HT WIN32 src/engine.h src/engine.cpp src/app.h src/app.cpp src/network.h src/main.cpp src/network.cpp mainwindow.ui res.qrc ${TS_FILES} )
 
 target_link_libraries(HT PRIVATE Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network)
