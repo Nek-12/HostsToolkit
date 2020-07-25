@@ -1,14 +1,18 @@
 #include "app.h"
+#include "engine.h"
+#include <qmessagebox.h>
+#include <qnamespace.h>
 // TODO: Add translations
 
-
-App::App(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
+App::App(QWidget* parent) :
+    QMainWindow(parent), ui(new Ui::MainWindow), e(this) {
     ui->setupUi(this);
+    qDebug() << "Created engine, connecting...";
     // ENGINE
     connect(&e, &Engine::stats, this, &App::upd_stats);
-    connect(&e, &Engine::ready, this, &App::on_engine_ready);
+    connect(&e, &Engine::ready, this, &App::engine_ready);
     connect(&e, &Engine::failed, this, &App::engine_failed);
-    connect(&e, &Engine::message, ui->Stats, &QStatusBar::showMessage);
+    connect(&e, &Engine::message, this, &App::display_msg);
     connect(&e, &Engine::progress, this, &App::upd_progress_bar);
     connect(&e, &Engine::state_updated, this, &App::upd_pending_state);
     // UI
@@ -19,27 +23,32 @@ App::App(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
     connect(ui->ApplyFileButton, &QPushButton::clicked, this,
             &App::apply_clicked);
     connect(ui->LoadSystemHosts, &QPushButton::clicked, this, &App::sys_load);
-    connect(ui->AboutButton, &QPushButton::clicked, this, &App::display_about);
+    connect(ui->AboutButton, &QPushButton::clicked, this, &App::about_clicked);
     connect(ui->SaveToButton, &QPushButton::clicked, this,
             &App::save_to_clicked);
     connect(ui->AddCustomEntryButton, &QPushButton::clicked, this,
             &App::add_custom_clicked);
     connect(ui->CustomEntryField, &QLineEdit::returnPressed, this,
             &App::add_custom_clicked);
+    connect(ui->AddUrlButton, &QPushButton::clicked, this,
+            &App::add_url_clicked);
     connect(ui->BrowseFileButton, &QPushButton::clicked, this,
             &App::add_file_clicked);
     connect(ui->DeleteCustomButton, &QPushButton::clicked, this,
             &App::del_custom_clicked);
     connect(ui->DeleteFileButton, &QPushButton::clicked, this,
             &App::del_file_clicked);
+
     // MISC
+    qDebug() << "Loading config...";
     load_config();
+    //TODO: Don't permit adding system hosts file two times, add check
 }
 //      ---------MISC-------
 void App::check_and_add_file(const QString& fname) {
     qDebug() << "load_file called";
     QFile f(fname);
-    if (f.open(QIODevice::ReadWrite)) {
+    if (f.open(QIODevice::ReadOnly)) {
         add_file(fname);
         qDebug() << "Added the file " << fname;
     } else {
@@ -51,31 +60,37 @@ void App::load_config() {
     QFile f(CONFIG_FNAME);
     if (!f.open(QIODevice::ReadOnly | QIODevice::Text))
         return;
+    int i = 0;
     while (!f.atEnd()) {
         QString s = f.readLine();
         // # Ignore comments
-        if (s.isEmpty() || (!s.isEmpty() && s.startsWith('#')))
+        if (s.isEmpty() || (!s.isEmpty() && s.startsWith('#')) ||
+            std::all_of(s.toStdString().begin(), s.toStdString().end(),
+                        isspace))
             continue;
         // First section: >CUSTOM
-        while (!s.startsWith(SPLIT_CHAR))
-            add_custom(s);
-        // 2nd section: >FILES
-        while (!s.startsWith(SPLIT_CHAR))
-            add_file(s);
-        // 3rd section: >URLS
-        while (!s.startsWith(SPLIT_CHAR))
-            add_url(s);
-        // TODO: Checkboxes
+        if (s.startsWith(SPLIT_CHAR)) {
+            ++i;
+            continue;
+        }
+        switch (i) {
+        case 1: add_custom(s); break;
+        case 2: add_file(s); break;
+        case 3: add_url(s); break;
+        default:
+            throw std::invalid_argument("Uncovered code path while loading files");
+        }
+        // TODO: Checkboxes states
     }
 }
 void App::start_engine(const QString& path) {
     if (!path.isEmpty()) {
         std::ofstream f(path.toStdString());
         if (f) {
-            e.start_work(path, ui->RemCommentsBox->isChecked(),
+            e.start_work(path.toStdString(), ui->RemCommentsBox->isChecked(),
                          ui->RemDupsBox->isChecked(),
                          ui->AddCreditsBox->isChecked(),
-                         ui->AddStatsBox.isChecked());
+                         ui->AddStatsBox->isChecked());
             return;
         }
         msg(tr(FILEERRORMSG));
@@ -95,13 +110,32 @@ void App::add_custom(const QString& s) {
     new QListWidgetItem(s, ui->CustomEntriesList);
 }
 
-void App::on_engine_ready() {
-    QMessageBox::information(this,"Success","Your file was created successfully");
+void App::engine_ready() {
+    QMessageBox::information(this, "Success",
+                             "Your file was created successfully");
 }
+
+void App::display_msg(const QString& msg) { ui->Stats->showMessage(msg); }
 
 App::~App() { delete ui; }
 
+void App::save_config() {
+    std::ofstream f(CONFIG_FNAME);
+    if (!f)
+        throw std::runtime_error(
+            "Couldn't open file for saving configuration.");
+    f << "# HostsTools configuration file.\n"
+      << CREDITS << "# You may edit this file, "
+      << "but don't touch or change the order of the >HEADERs!\n";
+    e.save_entries(f);
+}
+
 //      ----------UI--------
+void App::engine_failed(const QString& msg) {
+    QMessageBox::critical(this, "Saving failed",QString(
+                          "Failed to download files and/or process them."
+                          "Check URLs and files you added. \n%1").arg(msg));
+}
 
 void App::del_url_clicked() {
     auto* item = ui->UrlsList->currentItem();
@@ -113,7 +147,7 @@ void App::del_url_clicked() {
 }
 
 void App::del_file_clicked() {
-    auto *item = ui->FileList->currentItem();
+    auto* item = ui->FileList->currentItem();
     if (!item)
         return;
     if (item->text() == HOSTS) {
@@ -131,7 +165,8 @@ void App::del_custom_clicked() {
 
 void App::add_custom_clicked() {
     auto entry = ui->CustomEntryField->text();
-    add_custom(entry);
+    if (!entry.isEmpty())
+        add_custom(entry);
     ui->CustomEntryField->setText("");
 }
 
@@ -142,39 +177,33 @@ void App::add_file_clicked() {
         sys_load();
         return;
     }
-    add_file(path);
+    if (!path.isEmpty())
+        add_file(path);
 }
-
+//TODO: Add a progress dialog and the ability to cancel
 void App::add_url_clicked() {
     QString text = QInputDialog::getText(
         this, "Enter the URL",
         "Enter the path to the file: ", QLineEdit::Normal);
-    auto* dialog = new QProgressDialog(this);
-    dialog->setRange(0, 0);
-    dialog->setWindowTitle("Waiting for the availability of remote file...");
-    dialog->setLabelText("If the process is taking too long, cancel and check your "
-                         "internet connection");
-    while (true) {
+    if (text.isEmpty())
+        return;
+    for (int i = 0; i < 5; ++i) {
         if (DownloadManager::check_url(QUrl::fromEncoded(text.toLocal8Bit()))) {
             add_url(text);
-            break;
-        }
-        if (dialog->wasCanceled()) {
-            QMessageBox::critical(this, "Invalid URL", "The URL you entered is not available/valid.");
-            break;
+            return;
         }
     }
-    dialog->close();
-    dialog->deleteLater();
+    QMessageBox::critical(this, "Invalid URL",
+                          "The URL you entered is not available/valid. Aborted after 5 retrials");
 }
 
 void App::apply_clicked() {
-    if (e.is_pending() || !e.sources())
+    if (!e.is_pending() || !e.sources())
         return;
     start_engine(HOSTS);
 }
 void App::save_to_clicked() {
-    if (e.is_pending() || !e.sources())
+    if (!e.is_pending() || !e.sources())
         return;
     QString     path;
     QFileDialog d(this, tr("Select the destination file"), HOSTS);
@@ -228,9 +257,9 @@ void App::upd_progress_bar(int val) {
 }
 
 void App::about_clicked() {
-    QMessageBox::about(this, tr("About HostsToolkit"),
+    QMessageBox::about(this, tr("About HostsTools"),
                        tr("HostsTools V%1\n"
-                          "https://github.com/Nek-12/HostsToolkit\n"
+                          "https://github.com/Nek-12/HostsTools\n"
                           "By Nek.12 \n"
                           "t.me/Nek_12\n")
                            .arg(VERSION));

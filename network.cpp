@@ -1,14 +1,16 @@
 #include "network.h"
-#include "app.h"
-#include <qnetworkaccessmanager.h>
+#include <qobject.h>
 
-DownloadManager::DownloadManager() {
-    manager = new QNetworkAccessManager;
+DownloadManager::DownloadManager(QObject* parent): QObject(parent) {
+    manager = new QNetworkAccessManager(this);
     connect(manager, &QNetworkAccessManager::finished, this,
             &DownloadManager::on_download_finished);
 }
 
 void DownloadManager::do_download(const QUrl &url) {
+    if (!manager)
+        manager = new QNetworkAccessManager(this);
+    qDebug() << "Started download of file " << url;
     QNetworkRequest request(url);
     QNetworkReply * reply = manager->get(request);
     is_finished           = false;
@@ -89,6 +91,7 @@ void DownloadManager::on_download_finished(QNetworkReply *reply) {
 
     if (cur_downloads.isEmpty()) {
         is_finished = true;
+        emit all_finished();
     }
 }
 
@@ -125,14 +128,13 @@ bool DownloadManager::check_url(const QUrl &url) {
 }
 
 void DownloadManager::stop() {
+    qDebug() << "Stopping downloads forcefully in DownloadManager";
     cur_downloads.clear();
     manager->deleteLater();
-    manager = new QNetworkAccessManager;
 }
 
 DownloadManager::~DownloadManager() {
     if (manager)
         manager->deleteLater();
+    manager = nullptr;
 }
-
-#include "network.moc"

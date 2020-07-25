@@ -35,7 +35,7 @@
    <string extracomment="Console">HostsToolkit</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="../res.qrc">
+   <iconset resource="res.qrc">
     <normaloff>:/icon/icon.ico</normaloff>
     <normalon>:/icon/icon.ico</normalon>
     <disabledoff>:/icon/icon.ico</disabledoff>
@@ -169,7 +169,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>Add credits and statistics</string>
+       <string>Add credits</string>
       </property>
       <property name="checked">
        <bool>true</bool>
@@ -537,7 +537,7 @@
        <string>Load system</string>
       </property>
       <property name="checkable">
-       <bool>true</bool>
+       <bool>false</bool>
       </property>
       <property name="autoRepeatDelay">
        <number>0</number>
@@ -552,7 +552,7 @@
   <widget class="QStatusBar" name="Stats"/>
  </widget>
  <resources>
-  <include location="../res.qrc"/>
+  <include location="res.qrc"/>
  </resources>
  <connections/>
 </ui>

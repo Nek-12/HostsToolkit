@@ -1,11 +1,17 @@
 #include "engine.h"
+#include "network.h"
+#include <qdebug.h>
+#include <qobject.h>
+#include <qthread.h>
+#include <qurl.h>
+#include <stdexcept>
 // TODO: Add translations
 //TODO: Make stop() less dirty;
 
 //          -------------ENGINE------------
 void Engine::start_work(const std::string& hosts, bool rem_comments, bool rem_dups, bool add_credits,
                        bool add_stats) {
-    slave = new Slave(rem_comments, rem_dups, add_credits, add_stats, filepaths,
+    slave = new Slave(this,rem_comments, rem_dups, add_credits, add_stats, filepaths,
                       custom_lines, urls);
     hosts_path = hosts;
     working    = true;
@@ -17,6 +23,7 @@ void Engine::start_work(const std::string& hosts, bool rem_comments, bool rem_du
     connect(slave, &Slave::progress, this, &Engine::progress);
     connect(slave, &Slave::message, this, &Engine::message);
     connect(slave, &Slave::stats, this, &Engine::stats);
+    qDebug() << "Starting engine's slave";
     slave->start();
     //forget about the slave for now
 }
@@ -33,25 +40,23 @@ void Engine::thread_success(const std::string& res) {
         emit state_updated();
         return;
     }
-    emit failed();
+    emit failed("Finished the file, but couldn't write it");
 }
-void Engine::thread_failure() {
+void Engine::thread_failure(const QString& msg) {
     slave->deleteLater();
     working = false;
     slave = nullptr;
-    emit failed();
+    emit failed(msg);
 }
 
 Engine::~Engine() {
-    if (slave) {
-        slave->stop();
-        slave->deleteLater();
-    }
+    stop();
 }
 
 void Engine::stop() {
     if (slave) {
         slave->stop();
+        slave->wait();
         slave->deleteLater();
         slave = nullptr;
         working = false;
@@ -90,48 +95,83 @@ void Engine::rem_url(size_t row) {
     emit state_updated();
 }
 
+void Engine::save_entries(std::ofstream& f) {
+        f << SPLIT_CHAR << " CUSTOM\n";
+        for (const auto& el : custom_lines)
+            f << el << '\n';
+        f << SPLIT_CHAR << " FILES\n";
+        for (const auto& el : filepaths)
+            f << el << '\n';
+        f << SPLIT_CHAR << " URLS\n";
+        for (const auto& el : urls)
+            f << el.toEncoded().toStdString() << '\n';
+}
+
 //              -----------SLAVE-----------
+Slave::Slave(QObject* parent, bool rem_comments, bool rem_dups,
+             bool add_credits, bool add_stats,
+             std::vector<std::string> filepaths,
+             std::vector<std::string> custom_lines, std::vector<QUrl> urls) : QThread(parent), dl_mgr(this),
+    rem_comments(rem_comments),
+    rem_dups(rem_dups), add_credits(add_credits), add_stats(add_stats),
+    filepaths(std::move(filepaths)), custom_lines(std::move(custom_lines)),
+    urls(std::move(urls)) {
+    qDebug() << "Created new Slave";
+    connect(this, &Slave::request_dl, &dl_mgr, &DownloadManager::do_download);
+    connect(&dl_mgr, &DownloadManager::all_finished, this,
+            &Slave::all_dls_finished);
+}
+
 void Slave::run() {
+    // process urls
+    double i = 0;
+    emit message("Downloading files...");
+    for (const auto& url : urls) {
+        ++i;
+        emit progress(int(i / urls.size() * 100));
+        emit request_dl(url);
+    }
+}
+
+void Slave::all_dls_finished() try {
+    QString msg = "Downloads finished, processing files... \n";
+    qDebug() << msg;
+    emit message(msg);
     std::stringstream ret;
-    qulonglong commented_lines = 0, total = 0;
+    double i = 0;
+    qulonglong        commented_lines = 0, total = 0;
     if (add_credits)
         ret << CREDITS;
     ret << "\n# ------------- C U S T O M ------------- \n";
-    for (const auto &l : custom_lines)
+    for (const auto& l : custom_lines)
         ret << l << '\n'; // Add custom
-    // process urls
-    double i = 0;
-    for (const auto& url : urls) {
-        ++i;
-        emit message("Downloading files...");
-        emit progress(int(i/urls.size()*100));
-        dl_mgr.do_download(url);
-    }
-    // wait for the downloads
-    // TODO: Hacky. Maybe implement some signals?
-    while (!dl_mgr.finished()) {
-        if (abort) {
-            dl_mgr.stop();
-            return;
+    // process downloaded files
+    i  = 0;
+    std::stringstream contents;
+    for (const auto& fname : filepaths) {
+        std::ifstream f(fname);
+        if (f) {
+            contents << f.rdbuf();
+        } else {
+            throw std::runtime_error(
+                std::string("Couldn't open file:").append(fname));
         }
     }
-    // process downloaded files
-    QString  msg = "Downloads finished, processing files... \n";
-    qDebug() << msg;
-    emit message(msg);
-    i  = 0;
-    auto fname = std::string("hosts_").append(std::to_string(i));
+    auto fname = DL_FOLDER+std::string("hosts_").append(std::to_string(int(i)));
     while (std::filesystem::exists(fname)) {
         // check all files that were saved
+        qDebug() << "Found file " << QString::fromStdString(fname);
         if (abort)
             return;
         std::ifstream f(fname);
         if (f) {
+            qDebug() << "Opened file " << QString::fromStdString(fname);
             std::stringstream stream;
-            ret << f.rdbuf();
+            contents << f.rdbuf();
             qDebug() << "Added the file " << QString::fromStdString(fname) << '\n';
         } else {
-            qDebug() << "File exists but can't be opened!\n";
+            throw std::runtime_error(
+                std::string("Couldn't open file:").append(fname));
         }
         fname = std::string("hosts_").append(std::to_string(++i));
     }
@@ -141,47 +181,46 @@ void Slave::run() {
         std::string str = ret.str(); //Introduces significant overhead, but no other choice
         total_lines = count(str.begin(), str.end(), '\n');
     }
+    qDebug() << "Starting to merge files";
     if (rem_dups) {
         ret << "\n# ------------- DEDUPLICATED AND SORTED ------------- \n";
         std::set<std::string> strset;
-        while (ret) { // Process lines
+        while (contents) { // Process lines
             if (abort)
                 return;
             if (add_stats)
                 emit   progress(int(double(strset.size()) / total_lines * 100));
             std::string line;
-            std::getline(ret, line);
+            std::getline(contents, line);
             auto pair = process_line(line);
             commented_lines += pair.first; // remove comments if needed and increment the counter
-            if (pair.second.empty()) continue;
-            strset.insert(pair.second); // set does not store duplicates
+            if (!pair.second.empty())
+                strset.insert(pair.second); // set does not store duplicates
         }
-        ret.clear();
         total = strset.size();
         for (const auto &s : strset)
             ret << s << '\n'; // write every line back, no duplicates
     } else { // don't remove duplicates
         std::vector<std::string> strvec;
         ret << "\n# ------------- MERGED ------------- \n";
-        while (ret) { // Process lines
+        while (contents) { // Process lines
             if (abort)
                 return;
             if (add_stats)
             emit progress(int(strvec.size() / double(total_lines) * 100));
             std::string line;
-            std::getline(ret, line);
+            std::getline(contents, line);
             auto pair = process_line(line);
-            commented_lines += pair.first; //remove comments on demand
-            if (line.empty())
-                continue;
-            strvec.push_back(pair.second);
+            commented_lines += pair.first; // remove comments if needed and increment the counter
+            if (!pair.second.empty())
+                strvec.push_back(pair.second);
         }
-        ret.clear();
         total = strvec.size();
         for (const auto &s : strvec) {
             ret << s << '\n'; // write every line back
         }
     }
+    contents.clear();
     // start getting remaining statistics
     if (add_stats) {
         emit message("Getting your statistics...");
@@ -213,6 +252,12 @@ void Slave::run() {
     emit message("Done processing!");
     emit progress(100);
     emit success(ret.str());
+} catch (const std::exception& e) {
+    auto msg = QString::fromStdString(e.what());
+    qDebug() << msg;
+    emit failure(msg);
+    stop();
+    return;
 }
 
 auto Slave::process_line(std::string line) const -> std::pair<bool,std::string> {

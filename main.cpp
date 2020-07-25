@@ -1,7 +1,7 @@
 #include <QApplication>
 #include <QTranslator>
 #include "app.h"
-#include <fstream>
+
 
 void crash(const std::string& msg = "", const std::exception& e = std::runtime_error("Unknown error")) noexcept {
     std::ofstream f("CRASH.txt");
@@ -14,9 +14,13 @@ int main(int argc, char *argv[]) try {
     QTranslator qtTranslator;
     qtTranslator.load(QLocale::system(), QStringLiteral("qtbase_"));
     a.installTranslator(&qtTranslator);
+    qDebug() << "Instantiating app\n";
     App app{};
+    qDebug() << "Checking command line args\n";
     if (QCoreApplication::arguments().size() > 1)
-        a.check_and_add_file(QCoreApplication::arguments().at(1));
+        app.check_and_add_file(QCoreApplication::arguments().at(1));
+    app.show();
+    qDebug() << "App window shown\n";
     return a.exec();
 }
 catch (const std::exception& exc) {

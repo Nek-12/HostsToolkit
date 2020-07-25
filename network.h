@@ -1,10 +1,8 @@
 #pragma once
 #include <QtNetwork>
-#include <qnetworkaccessmanager.h>
-#include <qurl.h>
-#define DL_FOLDER "download/"
+#include <QNetworkAccessManager>
 #include <filesystem>
-
+#define DL_FOLDER "download/"
 QT_BEGIN_NAMESPACE
 class QSslError;
 QT_END_NAMESPACE
@@ -14,9 +12,8 @@ class DownloadManager : public QObject {
     QNetworkAccessManager*    manager;
     QVector<QNetworkReply*>  cur_downloads;
 public:
-    DownloadManager();
+    explicit DownloadManager(QObject* parent);
     ~DownloadManager() override;
-    void do_download(const QUrl &url);
     [[nodiscard]] static  bool check_url(const QUrl &url);
     [[nodiscard]] bool         finished() const { return is_finished; }
     void stop();
@@ -26,8 +23,10 @@ private:
     static bool    is_redirected(QNetworkReply *reply);
     bool is_finished = false;
 public slots:
+    void        do_download(const QUrl &url);
     void        on_download_finished(QNetworkReply *reply);
     static void ssl_errors(const QList<QSslError> &errors);
 signals:
     void dl_finished(QUrl);
+    void all_finished();
 };
