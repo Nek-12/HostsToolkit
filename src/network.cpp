@@ -1,14 +1,16 @@
 #include "network.h"
 #include "src/app.h"
+#include <qnetworkaccessmanager.h>
 
 
 DownloadManager::DownloadManager() {
-    connect(&manager, &QNetworkAccessManager::finished, this, &DownloadManager::on_download_finished);
+    manager = new QNetworkAccessManager;
+    connect(manager, &QNetworkAccessManager::finished, this, &DownloadManager::on_download_finished);
 }
 
 void DownloadManager::do_download(const QUrl &url) {
     QNetworkRequest request(url);
-    QNetworkReply * reply = manager.get(request);
+    QNetworkReply * reply = manager->get(request);
     is_finished = false;
 
 #if QT_CONFIG(ssl)
@@ -69,8 +71,10 @@ void DownloadManager::on_download_finished(QNetworkReply *reply) {
         } else {
             QString filename = get_filename(url);
             if (save_file(filename, reply)) {
-                qDebug() << "Download of " << url.toEncoded().constData() << " succeeded (saved to) \n"
+                qDebug() << "Download of " << url.toEncoded().constData()
+                         << " succeeded (saved to) \n"
                          << qPrintable(filename);
+                emit dl_finished(url);
             }
         }
     }
@@ -83,7 +87,7 @@ void DownloadManager::on_download_finished(QNetworkReply *reply) {
     }
 }
 
-bool DownloadManager::check_url(const QUrl &url, const unsigned retry_times = 3) {
+bool DownloadManager::check_url(const QUrl &url, unsigned retry_times = 3) {
     for (unsigned i = 0; i != retry_times; ++i) { // try several times
         QTcpSocket socket;
         QByteArray buffer;
@@ -107,11 +111,21 @@ bool DownloadManager::check_url(const QUrl &url, const unsigned retry_times = 3)
                         }
                         buffer.remove(0, packetSize);
                         packetSize = buffer.size();
-
                     } // while packet size >0
                 } // while socket.bytes
             } // socket wait for ready read
         } // socket write
     } // after all trials failed
     return false;
+}
+
+void DownloadManager::stop() {
+    cur_downloads.clear();
+    manager->deleteLater();
+    manager = new QNetworkAccessManager;
+}
+
+DownloadManager::~DownloadManager() {
+    if (manager)
+        manager->deleteLater();
 }

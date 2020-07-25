@@ -1,5 +1,5 @@
 #include "src/app.h"
-/*
+
 App::App(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
     ui->setupUi(this);
     connect(ui->ApplyFileButton, &QPushButton::clicked, this, &App::apply);
@@ -24,4 +24,26 @@ App::App(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
     connect(ui->AddUrlButton, &QPushButton::clicked, this, &App::add_url);
     load_custom();
 }
-*/
+
+void App::apply_clicked() {
+    
+}
+
+void App::update_pending_state(bool state) {
+    pending = state;
+    ui->ApplyFileButton->setEnabled(false);
+    ui->SaveToButton->setEnabled(false);
+}
+
+App::~App() { delete ui; }
+
+void App::closeEvent(QCloseEvent *bar) {
+    std::ofstream f(CONFIG_FNAME);
+    if (f) {
+        for (auto *l : customlines)
+            f << l->text().toStdString() << '\n';
+    }
+    QWidget::closeEvent(bar);
+}
+
+void App::msg(const QString &msg) { ui->Stats->showMessage(msg); }

@@ -3,23 +3,17 @@
 #include <qurl.h>
 #include <fstream>
 #include <set>
-//TODO: Add translations
+// TODO: Add translations
+//TODO: Make stop() less dirty;
 
 // The most important function. Does all the heavy stuff and returns complete
 // hosts file to apply
-void Engine::start_work(bool rem_comments, bool rem_dups, bool add_credits,
+void Engine::start_work(const std::string& hosts, bool rem_comments, bool rem_dups, bool add_credits,
                        bool add_stats) {
-    // load the data
-    std::vector<std::string> paths, custom;
-    std::vector<QUrl> addresses;
-    for (auto* w : filepaths)
-        paths.push_back(w->text().toStdString());
-    for (auto* w : custom_lines)
-        custom.push_back(w->text().toStdString());
-    for (auto* w : urls)
-        addresses.emplace_back(w->text());
-    slave = new Slave(rem_comments, rem_dups, add_credits, add_stats,
-                        paths,custom,addresses);
+    slave = new Slave(rem_comments, rem_dups, add_credits, add_stats, filepaths,
+                      custom_lines, urls);
+    hosts_path = hosts;
+    working = true;
     // connect the thread
     connect(slave, &Slave::success, this, &Engine::thread_success); // signal success
     connect(slave, &Slave::failure, this,
@@ -31,20 +25,29 @@ void Engine::start_work(bool rem_comments, bool rem_dups, bool add_credits,
     //forget about the slave for now
 }
 
-void Engine::thread_success(const std::string& res, const Stats& stats) {
+//TODO: Maybe the references can cause data loss.
+void Engine::thread_success(const std::string& res) {
     slave->deleteLater();
     slave = nullptr;
-    emit ready(res,stats);
+    working = false;
+    std::ofstream f(hosts_path);
+    if (f) {
+        f << res;
+        emit ready();
+        return;
+    }
+    emit failed();
 }
 void Engine::thread_failure() {
     slave->deleteLater();
+    working = false;
     slave = nullptr;
     emit failed();
 }
 
 void Slave::run() {
     std::stringstream ret;
-    qulonglong commented_lines = 0, total = 0, removed = 0;
+    qulonglong commented_lines = 0, total = 0;
     if (add_credits)
         ret << CREDITS;
     ret << "\n# ------------- C U S T O M ------------- \n";
@@ -54,12 +57,18 @@ void Slave::run() {
     double i = 0;
     for (const auto& url : urls) {
         ++i;
-        emit message(QString("Downloading %1").arg(url.url()));
+        emit message("Downloading files...");
         emit progress(int(i/urls.size()*100));
         dl_mgr.do_download(url);
     }
-    while (!dl_mgr.finished()) //wait for the downloads
-        ; //TODO: Hacky and stupid solution. Maybe implement some signals?
+    // wait for the downloads
+    // TODO: Hacky. Maybe implement some signals?
+    while (!dl_mgr.finished()) {
+        if (abort) {
+            dl_mgr.stop();
+            return;
+        }
+    }
     // process downloaded files
     QString msg = "Downloads finished, processing files... \n";
     qDebug() << msg;
@@ -68,6 +77,8 @@ void Slave::run() {
     auto fname = QString("hosts_%1").arg(i);
     while (QFile::exists(fname)) {
         // check all files that were saved
+        if (abort)
+            return;
         std::ifstream f(fname.toStdString());
         if (f) {
             std::stringstream stream;
@@ -88,6 +99,8 @@ void Slave::run() {
         ret << "\n# ------------- DEDUPLICATED AND SORTED ------------- \n";
         std::set<std::string> strset;
         while (ret) { // Process lines
+            if (abort)
+                return;
             if (add_stats)
                 emit   progress(int(double(strset.size()) / total_lines * 100));
             std::string line;
@@ -105,6 +118,8 @@ void Slave::run() {
         std::vector<std::string> strvec;
         ret << "\n# ------------- MERGED ------------- \n";
         while (ret) { // Process lines
+            if (abort)
+                return;
             if (add_stats)
             emit progress(int(strvec.size() / double(total_lines) * 100));
             std::string line;
@@ -123,7 +138,7 @@ void Slave::run() {
     }
     // start getting remaining statistics
     if (add_stats) {
-        emit        message("Getting your statistics...");
+        emit message("Getting your statistics...");
         Stats       st;
         char        symbol = 0;
         std::string opt;
@@ -133,8 +148,12 @@ void Slave::run() {
         symbol = '#';
         st.comments += std::count(str.begin(), str.end(), symbol);
         emit progress(50);
+        if (abort)
+            return;
         symbol = '\n';
         st.lines += std::count(str.begin(), str.end(), symbol);
+        if (abort)
+            return;
         emit progress(100);
 #ifdef TIME_MULTIPLIER
         stats.seconds_added = stats.lines / TIME_MULTIPLIER;
@@ -166,7 +185,16 @@ auto Slave::process_line(std::string line) const -> std::pair<bool,std::string> 
 
 Engine::~Engine() {
     if (slave) {
-        slave->quit();
+        slave->stop();
         slave->deleteLater();
+    }
+}
+
+void Engine::stop() {
+    if (slave) {
+        slave->stop();
+        slave->deleteLater();
+        slave = nullptr;
+        working = false;
     }
 }

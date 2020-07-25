@@ -1,22 +1,3 @@
-#include <qdebug.h>
-#include <qlistwidget.h>
-#include <qpushbutton.h>
-
-void App::apply() {
-    if (pending) {
-        std::ofstream f(HOSTS);
-        if (f) {
-            f << prepare_file();
-            pending = false;
-            ui->ApplyFileButton->setEnabled(pending);
-            ui->SaveToButton->setEnabled(pending);
-            return;
-        }
-        msg(FILEERRORMSG);
-        return;
-    }
-}
-
 void App::sys_load() {
     if (sys_loaded)
         return;
@@ -29,7 +10,7 @@ void App::update_stats() {
     pending = true;
     ui->ApplyFileButton->setEnabled(pending);
     ui->SaveToButton->setEnabled(pending);
-    
+
     ui->FileStats->setText(tr("Files to merge: %1 \n"
                               "Lines: %2 \n"
                               "Comments: %3 \n"
@@ -49,7 +30,7 @@ void App::upd_progress_bar(int val) {
 }
 
 void App::save_to() {
-    if (!pending)
+    if (e.pending
         return;//TODO: Test for entries, not just pending.
     QString     path;
     QFileDialog d(this, tr("Select the destination file"), HOSTS);
@@ -149,15 +130,3 @@ void App::load_custom() {
         }
     }
 }
-
-App::~App() { delete ui; }
-
-void App::closeEvent(QCloseEvent *bar) {
-    std::ofstream f(CONFIG_FNAME);
-    if (f) {
-        for (auto *l : customlines) f << l->text().toStdString() << '\n';
-    }
-    QWidget::closeEvent(bar);
-}
-
-void App::msg(const QString &msg) { ui->Stats->showMessage(msg); }

@@ -5,6 +5,7 @@
 #include <qglobal.h>
 #include <qmainwindow.h>
 #include <thread>
+#include <fstream>
 
 #ifdef __linux__
 #define HOSTS           "/etc/hosts"
@@ -23,6 +24,7 @@
 class App : public QMainWindow {
     Q_OBJECT
 public:
+    App& operator=(const App& ) = delete;
     App(const App& src) = delete;
     explicit App(QWidget* parent = nullptr);
     ~App() override;
@@ -34,9 +36,9 @@ signals:
 
 
 private:
-
+    void                           update_pending_state(bool);
+    Engine e;
     void closeEvent(QCloseEvent *bar) override;
     bool                           sys_loaded = false;
-    bool                           pending    = false;
     Ui::MainWindow*                ui;
 };
