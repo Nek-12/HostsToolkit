@@ -17,7 +17,7 @@ public:
     DownloadManager();
     ~DownloadManager() override;
     void do_download(const QUrl &url);
-    [[nodiscard]] static  bool check_url(const QUrl &url,  unsigned);
+    [[nodiscard]] static  bool check_url(const QUrl &url);
     [[nodiscard]] bool         finished() const { return is_finished; }
     void stop();
 private:

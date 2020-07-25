@@ -62,15 +62,12 @@ public:
     void start_work(const std::string& hosts, bool rem_comments, bool rem_dups,
                                   bool add_credits, bool add_stats);
 
-    void add_custom(const std::string& item) { custom_lines.push_back(item); pending = true; }
-    void add_file(const std::string& item) { filepaths.push_back(item); pending = true; }
-    void add_url(const QUrl& item) { urls.push_back(item); pending = true; }
-    void rem_custom(size_t row) {
-        custom_lines.erase(custom_lines.begin() + row);
-        pending = true;
-    }
-    void rem_file(size_t row) { filepaths.erase(filepaths.begin() + row); pending = true;}
-    void rem_url(size_t row) { urls.erase(urls.begin() + row); pending = true; }
+    void add_custom(const std::string& item);
+    void add_file(const std::string& item);
+    void add_url(const QUrl& item);
+    void rem_custom(size_t row);
+    void rem_file(size_t row);
+    void rem_url(size_t row);
     ~Engine() override;
     //Return the number of sources loaded, counting all custom as one
     [[nodiscard]] size_t sources() const {return urls.size() + filepaths.size() + custom_lines.empty(); }
@@ -86,7 +83,8 @@ signals:
     void failed(); //couldn't finish
     void stats(Stats);
     void progress(int);             // signals the percentage of work done
-    void message(std::string);          // signals any messages
+    void message(std::string);      // signals any messages
+    void state_updated();
 
 private:
     Slave *slave = nullptr;

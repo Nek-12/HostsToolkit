@@ -30,6 +30,7 @@ void Engine::thread_success(const std::string& res) {
     if (f) {
         f << res;
         emit ready();
+        emit state_updated();
         return;
     }
     emit failed();
@@ -55,6 +56,38 @@ void Engine::stop() {
         slave = nullptr;
         working = false;
     }
+}
+
+//TODO: Make one function and take parameters instead
+void Engine::add_custom(const std::string& item) {
+    custom_lines.push_back(item);
+    pending = true;
+    emit state_updated();
+}
+void Engine::add_file(const std::string& item) {
+    filepaths.push_back(item);
+    pending = true;
+    emit state_updated();
+}
+void Engine::add_url(const QUrl& item) {
+    urls.push_back(item);
+    pending = true;
+    emit state_updated();
+}
+void Engine::rem_custom(size_t row) {
+    custom_lines.erase(custom_lines.begin() + row);
+    pending = true;
+    emit state_updated();
+}
+void Engine::rem_file(size_t row) {
+    filepaths.erase(filepaths.begin() + row);
+    pending = true;
+    emit state_updated();
+}
+void Engine::rem_url(size_t row) {
+    urls.erase(urls.begin() + row);
+    pending = true;
+    emit state_updated();
 }
 
 //              -----------SLAVE-----------
