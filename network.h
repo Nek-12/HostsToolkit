@@ -31,5 +31,3 @@ public slots:
 signals:
     void dl_finished(QUrl);
 };
-
-#include "network.moc"

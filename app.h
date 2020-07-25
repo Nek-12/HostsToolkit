@@ -1,5 +1,5 @@
 #pragma once
-#include "./ui_mainwindow.h"
+#include "./ui_app.h"
 #include "engine.h"
 #include <QMainWindow>
 #include <fstream>
@@ -35,6 +35,9 @@ public:
     App(const App& src) = delete;
     explicit App(QWidget* parent = nullptr);
     ~App() override;
+    void check_and_add_file(
+        const QString& fname); // checks if the file is writable&readable and
+                               // then calls add_file
 
 public slots:
     void upd_stats(const Stats&); // Updates the stats text field
@@ -55,12 +58,11 @@ public slots:
 
 
 private:
+    void add_file(const QString&); // just adds the file to both lists
     void add_url(const QString&);
-    void add_file(const QString&); //just adds the file to both lists
     void add_custom(const QString&);
     void msg(const QString& msg); //Displays message in the statusbar
     void sys_load(); //Loads the system hosts file
-    void check_and_add_file(const QString& fname); // checks if the file is writable&readable and then calls add_file
     void save_config();                   // Saves the data
     void load_config();                   // Loads user data
     void start_engine(const QString& path); //Starts the engine with the given path

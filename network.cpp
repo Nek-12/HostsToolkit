@@ -1,5 +1,5 @@
 #include "network.h"
-#include "src/app.h"
+#include "app.h"
 #include <qnetworkaccessmanager.h>
 
 DownloadManager::DownloadManager() {
@@ -134,3 +134,5 @@ DownloadManager::~DownloadManager() {
     if (manager)
         manager->deleteLater();
 }
+
+#include "network.moc"

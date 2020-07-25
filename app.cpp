@@ -1,4 +1,4 @@
-#include "src/app.h"
+#include "app.h"
 // TODO: Add translations
 
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>MainWindow</class>
- <widget class="QMainWindow" name="MainWindow">
+ <class>App</class>
+ <widget class="QMainWindow" name="App">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -35,7 +35,7 @@
    <string extracomment="Console">HostsToolkit</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="res.qrc">
+   <iconset resource="../res.qrc">
     <normaloff>:/icon/icon.ico</normaloff>
     <normalon>:/icon/icon.ico</normalon>
     <disabledoff>:/icon/icon.ico</disabledoff>
@@ -175,7 +175,7 @@
        <bool>true</bool>
       </property>
      </widget>
-     <widget class="QPushButton" name="DeleteListItemButton">
+     <widget class="QPushButton" name="DeleteCustomButton">
       <property name="geometry">
        <rect>
         <x>0</x>
@@ -370,7 +370,7 @@
      <zorder>RemCommentsBox</zorder>
      <zorder>RemDupsBox</zorder>
      <zorder>AddCreditsBox</zorder>
-     <zorder>DeleteListItemButton</zorder>
+     <zorder>DeleteCustomButton</zorder>
      <zorder>AboutButton</zorder>
      <zorder>AddCustomEntryButton</zorder>
      <zorder>ProgressBar</zorder>
@@ -552,7 +552,7 @@
   <widget class="QStatusBar" name="Stats"/>
  </widget>
  <resources>
-  <include location="res.qrc"/>
+  <include location="../res.qrc"/>
  </resources>
  <connections/>
 </ui>

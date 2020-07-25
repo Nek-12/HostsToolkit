@@ -1,4 +1,4 @@
-#include "src/engine.h"
+#include "engine.h"
 // TODO: Add translations
 //TODO: Make stop() less dirty;
 
