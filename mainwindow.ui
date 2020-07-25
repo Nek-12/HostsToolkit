@@ -339,9 +339,9 @@
       <property name="geometry">
        <rect>
         <x>510</x>
-        <y>130</y>
+        <y>160</y>
         <width>481</width>
-        <height>331</height>
+        <height>301</height>
        </rect>
       </property>
       <property name="frameShape">
@@ -349,6 +349,19 @@
       </property>
       <property name="text">
        <string/>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="AddStatsBox">
+      <property name="geometry">
+       <rect>
+        <x>510</x>
+        <y>130</y>
+        <width>341</width>
+        <height>30</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Calculate statistics</string>
       </property>
      </widget>
      <zorder>CustomEntriesLabel</zorder>
@@ -364,6 +377,7 @@
      <zorder>ApplyFileButton</zorder>
      <zorder>SaveToButton</zorder>
      <zorder>FileStats</zorder>
+     <zorder>AddStatsBox</zorder>
     </widget>
     <widget class="QWidget" name="TabSrc">
      <attribute name="title">

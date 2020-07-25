@@ -1,11 +1,8 @@
 #include "network.h"
 #include <QThread>
-#include <qurl.h>
-#include <utility>
-#include <pthread.h>
-#include <qlistwidget.h>
-#include <qobjectdefs.h>
-class QListWidgetItem;
+#include <fstream>
+#include <set>
+#include <filesystem>
 // NOLINTNEXTLINE
 #define CREDITS                                                                \
     "# This file was generated with HostsToolkit: "                            \
@@ -13,7 +10,7 @@ class QListWidgetItem;
 // TODO: Resize the string before writing!
 // TODO: Don't forget to clear the variables to not increase the stack size
 // TODO: Remember to never flush the buffer
-// TODO: Migrate to Q-containers and facilities.
+// TODO: Comment code
 struct Stats {
     qulonglong lines         = 0;
     qulonglong size          = 0; //In bytes
@@ -22,6 +19,7 @@ struct Stats {
     qulonglong seconds_added = 0;
     qulonglong removed = 0;
 };
+// NOTE: Qt containers are slower than std.
 
 //Creates and parses the hosts files for food and shelter
 class Slave : public QThread {
@@ -30,7 +28,8 @@ public:
     // Copies the data to avoid sharing
     Slave(bool rem_comments, bool rem_dups, bool add_credits, bool add_stats,
           std::vector<std::string> filepaths,
-          std::vector<std::string> custom_lines, std::vector<QUrl> urls)
+          std::vector<std::string> custom_lines,
+          std::vector<QUrl> urls)
         : rem_comments(rem_comments), rem_dups(rem_dups),
           add_credits(add_credits), add_stats(add_stats),
           filepaths(std::move(filepaths)), custom_lines(std::move(custom_lines)), urls(std::move(urls)) {}
@@ -47,7 +46,7 @@ signals:
 
 private:
     bool abort = false;
-    [[nodiscard]] std::pair<bool,std::string> process_line(std::string ) const;
+    [[nodiscard]] std::pair<bool,std::string> process_line(std::string) const;
     bool rem_comments, rem_dups, add_credits, add_stats;
     std::vector<std::string> filepaths, custom_lines;
     std::vector<QUrl>        urls;
@@ -87,7 +86,7 @@ signals:
     void failed(); //couldn't finish
     void stats(Stats);
     void progress(int);             // signals the percentage of work done
-    void message(QString);          // signals any messages
+    void message(std::string);          // signals any messages
 
 private:
     Slave *slave = nullptr;

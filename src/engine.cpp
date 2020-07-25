@@ -1,19 +1,15 @@
 #include "src/engine.h"
-#include <qglobal.h>
-#include <qurl.h>
-#include <fstream>
-#include <set>
 // TODO: Add translations
 //TODO: Make stop() less dirty;
 
-// The most important function. Does all the heavy stuff and returns complete
-// hosts file to apply
+//          -------------ENGINE------------
 void Engine::start_work(const std::string& hosts, bool rem_comments, bool rem_dups, bool add_credits,
                        bool add_stats) {
     slave = new Slave(rem_comments, rem_dups, add_credits, add_stats, filepaths,
                       custom_lines, urls);
     hosts_path = hosts;
-    working = true;
+    working    = true;
+    pending = false;
     // connect the thread
     connect(slave, &Slave::success, this, &Engine::thread_success); // signal success
     connect(slave, &Slave::failure, this,
@@ -45,6 +41,23 @@ void Engine::thread_failure() {
     emit failed();
 }
 
+Engine::~Engine() {
+    if (slave) {
+        slave->stop();
+        slave->deleteLater();
+    }
+}
+
+void Engine::stop() {
+    if (slave) {
+        slave->stop();
+        slave->deleteLater();
+        slave = nullptr;
+        working = false;
+    }
+}
+
+//              -----------SLAVE-----------
 void Slave::run() {
     std::stringstream ret;
     qulonglong commented_lines = 0, total = 0;
@@ -70,24 +83,24 @@ void Slave::run() {
         }
     }
     // process downloaded files
-    QString msg = "Downloads finished, processing files... \n";
+    QString  msg = "Downloads finished, processing files... \n";
     qDebug() << msg;
     emit message(msg);
     i  = 0;
-    auto fname = QString("hosts_%1").arg(i);
-    while (QFile::exists(fname)) {
+    auto fname = std::string("hosts_").append(std::to_string(i));
+    while (std::filesystem::exists(fname)) {
         // check all files that were saved
         if (abort)
             return;
-        std::ifstream f(fname.toStdString());
+        std::ifstream f(fname);
         if (f) {
             std::stringstream stream;
             ret << f.rdbuf();
-            qDebug() << "Added the file " << fname << '\n';
+            qDebug() << "Added the file " << QString::fromStdString(fname) << '\n';
         } else {
             qDebug() << "File exists but can't be opened!\n";
         }
-        fname = QString("hosts_%1").arg(++i);
+        fname = std::string("hosts_").append(std::to_string(++i));
     }
     // TODO: Check for overflow!
     size_t total_lines = 1;
@@ -181,20 +194,4 @@ auto Slave::process_line(std::string line) const -> std::pair<bool,std::string> 
         }
     }
     return std::make_pair(false,line);
-}
-
-Engine::~Engine() {
-    if (slave) {
-        slave->stop();
-        slave->deleteLater();
-    }
-}
-
-void Engine::stop() {
-    if (slave) {
-        slave->stop();
-        slave->deleteLater();
-        slave = nullptr;
-        working = false;
-    }
 }
