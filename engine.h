@@ -19,11 +19,13 @@
 // TODO: Open a new progressbar window. The feedback right now is nonexistent
 // TODO: Fix that free() error
 // TODO: The entries from the config aren't being added for some reason. Why?
-// TODO: Don't let exceptions propagate through QT code. Handle them/replace them with warnings
+// TODO: Don't let exceptions propagate through QT code. Handle them/replace
+// them with warnings
 // TODO: Test the app with 10+ sources. Test performance
 // TODO: Clean up the access levels.
 // TODO: Move the string constants to well, constants.
 // TODO: Move the code about saving the file to Slave
+// TODO: Remove progressbar from the main window.
 struct Stats {
     qulonglong lines         = 0;
     qulonglong size          = 0; // In bytes
@@ -67,10 +69,10 @@ private:
 };
 
 // Manages threads and stores data needed for them to run
-class Engine : public QWidget {
+class Engine : public QObject {
     Q_OBJECT
 public:
-    explicit Engine(QWidget* parent);
+    explicit Engine(QObject* parent);
     // Starts working. Once finishes, emits ready(data)
     void start_work(const std::string& hosts, bool rem_comments, bool rem_dups,
                     bool add_credits, bool add_stats);

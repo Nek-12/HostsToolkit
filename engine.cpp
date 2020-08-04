@@ -7,12 +7,12 @@
 #include <qurl.h>
 #include <stdexcept>
 //TODO: Make stop() less dirty;
-//TODO: Move the progress bar handling to Slave. 
+//TODO: Move the progress bar handling to Slave.
 //          -------------ENGINE------------
-Engine::Engine(QWidget* parent) : QWidget(parent) {
+Engine::Engine(QObject* parent) : QObject(parent) {
     qDebug() << "Creating an Engine...";
     progress_bar_ptr =
-        new QProgressDialog(this);
+        new QProgressDialog("Building hosts file...", "Abort", 0, 100);
     progress_bar_ptr->setWindowTitle("Please stand by...");
     progress_bar_ptr->setAutoClose(true);
     progress_bar_ptr->setWindowModality(Qt::WindowModal);
@@ -71,7 +71,6 @@ void Engine::message(const QString& s) { progress_bar_ptr->setLabelText(s); }
 
 Engine::~Engine() {
     stop();
-    std::filesystem::remove_all(DL_FOLDER); // delete temp folder
     delete progress_bar_ptr;
 }
 
@@ -82,6 +81,7 @@ void Engine::stop() {
         slave->setParent(nullptr);
         delete slave;//TODO: I suspect a better solution here...
         slave = nullptr;
+        std::filesystem::remove_all(DL_FOLDER); // delete temp folder
     }
 }
 
