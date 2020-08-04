@@ -4,7 +4,7 @@
 #include <qnamespace.h>
 // TODO: Add translations
 
-App::App(QWidget* parent) :
+App::App(QWidget *parent) :
     QMainWindow(parent), ui(new Ui::MainWindow), e(this) {
     ui->setupUi(this);
     qDebug() << "Created engine, connecting...";
@@ -12,8 +12,6 @@ App::App(QWidget* parent) :
     connect(&e, &Engine::stats, this, &App::upd_stats);
     connect(&e, &Engine::ready, this, &App::engine_ready);
     connect(&e, &Engine::failed, this, &App::engine_failed);
-    connect(&e, &Engine::message, this, &App::display_msg);
-    connect(&e, &Engine::progress, this, &App::upd_progress_bar);
     connect(&e, &Engine::state_updated, this, &App::upd_pending_state);
     // UI
     connect(ui->CustomEntriesList, &QListWidget::itemActivated,
@@ -38,23 +36,15 @@ App::App(QWidget* parent) :
             &App::del_custom_clicked);
     connect(ui->DeleteFileButton, &QPushButton::clicked, this,
             &App::del_file_clicked);
+    connect(ui->DeleteUrlButton, &QPushButton::clicked, this,
+            &App::del_url_clicked);
 
     // MISC
     qDebug() << "Loading config...";
     load_config();
-    //TODO: Don't permit adding system hosts file two times, add check
+    // TODO: Don't permit adding system hosts file two times, add check
 }
 //      ---------MISC-------
-void App::check_and_add_file(const QString& fname) {
-    qDebug() << "load_file called";
-    QFile f(fname);
-    if (f.open(QIODevice::ReadOnly)) {
-        add_file(fname);
-        qDebug() << "Added the file " << fname;
-    } else {
-        msg(tr(FILEERRORMSG));
-    }
-}
 
 void App::load_config() {
     QFile f(CONFIG_FNAME);
@@ -63,11 +53,10 @@ void App::load_config() {
     int i = 0;
     while (!f.atEnd()) {
         QString s = f.readLine();
-        // # Ignore comments
-        if (s.isEmpty() || (!s.isEmpty() && s.startsWith('#')) ||
-            std::all_of(s.toStdString().begin(), s.toStdString().end(),
-                        isspace))
-            continue;
+        s         = s.remove('\n'); // remove all newlines and space
+        s         = s.simplified(); // replace tabs and remove trailing spaces
+        if (s.isEmpty() || s == HOSTS || (!s.isEmpty() && s.startsWith('#')))
+            continue; // skip empty strings, system hosts, comments
         // First section: >CUSTOM
         if (s.startsWith(SPLIT_CHAR)) {
             ++i;
@@ -78,34 +67,49 @@ void App::load_config() {
         case 2: add_file(s); break;
         case 3: add_url(s); break;
         default:
-            throw std::invalid_argument("Uncovered code path while loading files");
+            display_warning(tr(CONFIG_ERROR_MSG));
         }
         // TODO: Checkboxes states
+        // TODO: Handle blank and missing files properly, handle urls properly
+        // (check them!);
     }
 }
-void App::start_engine(const QString& path) {
-    if (!path.isEmpty()) {
-        std::ofstream f(path.toStdString());
+void App::start_engine(const QString &path) {
+    std::string sp = path.toStdString();
+    if (!sp.empty()) {
+        std::ofstream f(sp);
         if (f) {
-            e.start_work(path.toStdString(), ui->RemCommentsBox->isChecked(),
+            e.start_work(sp, ui->RemCommentsBox->isChecked(),
                          ui->RemDupsBox->isChecked(),
                          ui->AddCreditsBox->isChecked(),
                          ui->AddStatsBox->isChecked());
             return;
         }
-        msg(tr(FILEERRORMSG));
+        display_warning(FILEERRORMSG);
     }
 }
 
-void App::add_url(const QString& s) {
-    e.add_url(s);
-    new QListWidgetItem(s, ui->UrlsList);
+void App::add_url(const QString &s) {
+    if (check_url(s)) {
+        e.add_url(s);
+        new QListWidgetItem(s, ui->UrlsList);
+    }
+    else {
+        display_warning(QString("Couldn't add URL: ").append(s));
+    }
 }
-void App::add_file(const QString& s) {
-    e.add_file(s.toStdString());
-    new QListWidgetItem(s, ui->FileList);
+void App::add_file(const QString &s) {
+    qDebug() << "load_file called";
+    QFile f(s);
+    if (f.open(QIODevice::ReadOnly)) {
+        e.add_file(s.toStdString());
+        new QListWidgetItem(s, ui->FileList);
+        qDebug() << "Added the file " << s;
+    } else {
+        display_warning(tr(FILEERRORMSG));
+    }
 }
-void App::add_custom(const QString& s) {
+void App::add_custom(const QString &s) {
     e.add_custom(s.toStdString());
     new QListWidgetItem(s, ui->CustomEntriesList);
 }
@@ -115,7 +119,7 @@ void App::engine_ready() {
                              "Your file was created successfully");
 }
 
-void App::display_msg(const QString& msg) { ui->Stats->showMessage(msg); }
+void App::display_msg(const QString &msg) { ui->Stats->showMessage(msg); }
 
 App::~App() { delete ui; }
 
@@ -131,14 +135,16 @@ void App::save_config() {
 }
 
 //      ----------UI--------
-void App::engine_failed(const QString& msg) {
-    QMessageBox::critical(this, "Saving failed",QString(
-                          "Failed to download files and/or process them."
-                          "Check URLs and files you added. \n%1").arg(msg));
+void App::engine_failed(const QString &msg) {
+    QMessageBox::critical(
+        this, "Saving failed",
+        QString("Failed to download files and/or process them."
+                "Check URLs and files you added. \n%1")
+            .arg(msg));
 }
 
 void App::del_url_clicked() {
-    auto* item = ui->UrlsList->currentItem();
+    auto *item = ui->UrlsList->currentItem();
     if (!item)
         return;
     auto row = ui->UrlsList->currentRow();
@@ -147,7 +153,7 @@ void App::del_url_clicked() {
 }
 
 void App::del_file_clicked() {
-    auto* item = ui->FileList->currentItem();
+    auto *item = ui->FileList->currentItem();
     if (!item)
         return;
     if (item->text() == HOSTS) {
@@ -180,7 +186,7 @@ void App::add_file_clicked() {
     if (!path.isEmpty())
         add_file(path);
 }
-//TODO: Add a progress dialog and the ability to cancel
+// TODO: Add a progress dialog and the ability to cancel
 void App::add_url_clicked() {
     QString text = QInputDialog::getText(
         this, "Enter the URL",
@@ -188,13 +194,14 @@ void App::add_url_clicked() {
     if (text.isEmpty())
         return;
     for (int i = 0; i < 5; ++i) {
-        if (DownloadManager::check_url(QUrl::fromEncoded(text.toLocal8Bit()))) {
+        if (check_url(QUrl::fromEncoded(text.toLocal8Bit()))) {
             add_url(text);
             return;
         }
     }
-    QMessageBox::critical(this, "Invalid URL",
-                          "The URL you entered is not available/valid. Aborted after 5 retrials");
+    QMessageBox::critical(
+        this, "Invalid URL",
+        "The URL you entered is not available/valid. Aborted after 5 retrials");
 }
 
 void App::apply_clicked() {
@@ -223,33 +230,33 @@ void App::sys_load() {
         return;
     ui->LoadSystemHosts->setEnabled(false);
     sys_loaded = true;
-    check_and_add_file(HOSTS);
+    add_file(HOSTS);
 }
 
-void App::closeEvent(QCloseEvent* event) {
+void App::closeEvent(QCloseEvent *event) {
     save_config();
     e.stop();
     e.deleteLater();
     QWidget::closeEvent(event);
 }
 
-void App::upd_stats(const Stats& st) {
+void App::upd_stats(const Stats &st) {
     ui->FileStats->setText(
         tr("Total lines: %1 \n"
-           "File Size (MB) %2 \n"
+           "File Size (KB) %2 \n"
            "Comments: %3 \n"
            "Sources: %4 \n"
            "Seconds added to boot up process (Approximate): %5 \n"
            "Total lines removed: %6")
             .arg(st.lines)
-            .arg(double(st.size) / 1000000)
+            .arg(double(st.size) / 1000)
             .arg(st.comments)
             .arg(st.sources)
             .arg(st.seconds_added)
             .arg(st.removed));
 }
 
-void App::msg(const QString& msg) { ui->Stats->showMessage(msg); }
+void App::msg(const QString &msg) { ui->Stats->showMessage(msg); }
 
 void App::upd_progress_bar(int val) {
     ui->ProgressBar->setTextVisible(true);
@@ -263,4 +270,8 @@ void App::about_clicked() {
                           "By Nek.12 \n"
                           "t.me/Nek_12\n")
                            .arg(VERSION));
+}
+
+void App::display_warning(const QString &msg) {
+    QMessageBox::warning(this, "Warning!", msg);
 }

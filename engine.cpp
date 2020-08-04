@@ -2,19 +2,36 @@
 #include "network.h"
 #include <qdebug.h>
 #include <qobject.h>
+#include <qprogressdialog.h>
 #include <qthread.h>
 #include <qurl.h>
 #include <stdexcept>
-// TODO: Add translations
 //TODO: Make stop() less dirty;
-
+//TODO: Move the progress bar handling to Slave. 
 //          -------------ENGINE------------
-void Engine::start_work(const std::string& hosts, bool rem_comments, bool rem_dups, bool add_credits,
-                       bool add_stats) {
-    slave = new Slave(this,rem_comments, rem_dups, add_credits, add_stats, filepaths,
-                      custom_lines, urls);
+Engine::Engine(QWidget* parent) : QWidget(parent) {
+    qDebug() << "Creating an Engine...";
+    progress_bar_ptr =
+        new QProgressDialog(this);
+    progress_bar_ptr->setWindowTitle("Please stand by...");
+    progress_bar_ptr->setAutoClose(true);
+    progress_bar_ptr->setWindowModality(Qt::WindowModal);
+    progress_bar_ptr->hide();
+    qDebug() << "Created and hidden the progress window";
+    connect(progress_bar_ptr,&QProgressDialog::canceled,this,&Engine::stop);
+}
+
+void Engine::start_work(const std::string& hosts, bool rem_comments,
+                        bool rem_dups, bool add_credits, bool add_stats) {
+    if (slave) {
+        emit failed("The process is already running!");
+        return;
+    }
+    progress_bar_ptr->reset();
+    qDebug() << "Employing a slave...";
+    slave = new Slave(this, rem_comments, rem_dups, add_credits, add_stats,
+                      filepaths, custom_lines, urls);
     hosts_path = hosts;
-    working    = true;
     pending = false;
     // connect the thread
     connect(slave, &Slave::success, this, &Engine::thread_success); // signal success
@@ -23,47 +40,51 @@ void Engine::start_work(const std::string& hosts, bool rem_comments, bool rem_du
     connect(slave, &Slave::progress, this, &Engine::progress);
     connect(slave, &Slave::message, this, &Engine::message);
     connect(slave, &Slave::stats, this, &Engine::stats);
+    qDebug() << "Showing the progressbar";
+    progress_bar_ptr->show();
     qDebug() << "Starting engine's slave";
     slave->start();
     //forget about the slave for now
 }
 
-//TODO: Maybe the references can cause data loss.
+//TODO: Maybe the references can cause data loss?
 void Engine::thread_success(const std::string& res) {
-    slave->deleteLater();
-    slave = nullptr;
-    working = false;
+    stop();
     std::ofstream f(hosts_path);
     if (f) {
         f << res;
         emit ready();
-        emit state_updated();
         return;
     }
     emit failed("Finished the file, but couldn't write it");
+    progress_bar_ptr->reset();
 }
+
 void Engine::thread_failure(const QString& msg) {
-    slave->deleteLater();
-    working = false;
-    slave = nullptr;
+    stop();
+    progress_bar_ptr->reset();
     emit failed(msg);
 }
 
+void Engine::progress(int n) { progress_bar_ptr->setValue(n); }
+void Engine::message(const QString& s) { progress_bar_ptr->setLabelText(s); }
+
 Engine::~Engine() {
     stop();
+    std::filesystem::remove_all(DL_FOLDER); // delete temp folder
+    delete progress_bar_ptr;
 }
 
 void Engine::stop() {
     if (slave) {
         slave->stop();
         slave->wait();
-        slave->deleteLater();
+        slave->setParent(nullptr);
+        delete slave;//TODO: I suspect a better solution here...
         slave = nullptr;
-        working = false;
     }
 }
 
-//TODO: Make one function and take parameters instead
 void Engine::add_custom(const std::string& item) {
     custom_lines.push_back(item);
     pending = true;
@@ -104,33 +125,34 @@ void Engine::save_entries(std::ofstream& f) {
             f << el << '\n';
         f << SPLIT_CHAR << " URLS\n";
         for (const auto& el : urls)
-            f << el.toEncoded().toStdString() << '\n';
+            f << el.toString().toStdString() << '\n';
 }
 
 //              -----------SLAVE-----------
 Slave::Slave(QObject* parent, bool rem_comments, bool rem_dups,
              bool add_credits, bool add_stats,
              std::vector<std::string> filepaths,
-             std::vector<std::string> custom_lines, std::vector<QUrl> urls) : QThread(parent), dl_mgr(this),
-    rem_comments(rem_comments),
-    rem_dups(rem_dups), add_credits(add_credits), add_stats(add_stats),
-    filepaths(std::move(filepaths)), custom_lines(std::move(custom_lines)),
-    urls(std::move(urls)) {
-    qDebug() << "Created new Slave";
-    connect(this, &Slave::request_dl, &dl_mgr, &DownloadManager::do_download);
+             std::vector<std::string> custom_lines,
+             const std::vector<QUrl>& urls) :
+    QThread(parent),
+    dl_mgr(this), rem_comments(rem_comments), rem_dups(rem_dups),
+    add_credits(add_credits), add_stats(add_stats),
+    filepaths(std::move(filepaths)), custom_lines(std::move(custom_lines)) {
+    connect(&dl_mgr, &DownloadManager::message, this, &Slave::message);
     connect(&dl_mgr, &DownloadManager::all_finished, this,
             &Slave::all_dls_finished);
+    connect(&dl_mgr, &DownloadManager::dl_failed, this, &Slave::failure);
+    connect(&dl_mgr, &DownloadManager::progress, this, &Slave::progress);
+
+    //Add downloads, but don't go yet.
+    for (const auto& url : urls)
+        dl_mgr.append(url);
+    qDebug() << "Created new Slave";
 }
 
 void Slave::run() {
-    // process urls
-    double i = 0;
     emit message("Downloading files...");
-    for (const auto& url : urls) {
-        ++i;
-        emit progress(int(i / urls.size() * 100));
-        emit request_dl(url);
-    }
+    dl_mgr.go(); //begin downloading and wait...
 }
 
 void Slave::all_dls_finished() try {
@@ -138,7 +160,7 @@ void Slave::all_dls_finished() try {
     qDebug() << msg;
     emit message(msg);
     std::stringstream ret;
-    double i = 0;
+    int i = 0;
     qulonglong        commented_lines = 0, total = 0;
     if (add_credits)
         ret << CREDITS;
@@ -154,7 +176,7 @@ void Slave::all_dls_finished() try {
             contents << f.rdbuf();
         } else {
             throw std::runtime_error(
-                std::string("Couldn't open file:").append(fname));
+                std::string("Couldn't open file: ").append(fname));
         }
     }
     auto fname = DL_FOLDER+std::string("hosts_").append(std::to_string(int(i)));
@@ -173,7 +195,8 @@ void Slave::all_dls_finished() try {
             throw std::runtime_error(
                 std::string("Couldn't open file:").append(fname));
         }
-        fname = std::string("hosts_").append(std::to_string(++i));
+        fname = DL_FOLDER+std::string("hosts_").append(std::to_string(++i));
+        qDebug() << "Next file is named: " << QString::fromStdString(fname);
     }
     // TODO: Check for overflow!
     size_t total_lines = 1;
@@ -189,7 +212,7 @@ void Slave::all_dls_finished() try {
             if (abort)
                 return;
             if (add_stats)
-                emit   progress(int(double(strset.size()) / total_lines * 100));
+                emit   progress(int(strset.size()*100 / total_lines));
             std::string line;
             std::getline(contents, line);
             auto pair = process_line(line);
@@ -221,6 +244,7 @@ void Slave::all_dls_finished() try {
         }
     }
     contents.clear();
+    qDebug() << "Finished merging " << i << " files";
     // start getting remaining statistics
     if (add_stats) {
         emit message("Getting your statistics...");
@@ -245,7 +269,7 @@ void Slave::all_dls_finished() try {
 #endif
         qDebug() << st.lines;
         st.removed = st.lines - total;
-        st.sources = urls.size() + filepaths.size() + 1; // 1 for custom lines
+        st.sources = dl_mgr.get_total() + filepaths.size() + 1; // 1 for custom lines
         st.size = str.size()*sizeof(char); //in bytes
         emit stats(st);
     }

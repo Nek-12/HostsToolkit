@@ -225,6 +225,7 @@ download
 
 # custom entries file
 **/custom.txt
+**/.temp
 
 # clang
 .clangd

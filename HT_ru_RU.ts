@@ -4,19 +4,19 @@
 <context>
     <name>App</name>
     <message>
-        <location filename="app.cpp" line="174"/>
+        <location filename="app.cpp" line="181"/>
         <source>Open a text or hosts file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="app.cpp" line="208"/>
+        <location filename="app.cpp" line="216"/>
         <source>Select the destination file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="app.cpp" line="237"/>
+        <location filename="app.cpp" line="245"/>
         <source>Total lines: %1 
-File Size (MB) %2 
+File Size (KB) %2 
 Comments: %3 
 Sources: %4 
 Seconds added to boot up process (Approximate): %5 
@@ -24,7 +24,7 @@ Total lines removed: %6</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="app.cpp" line="260"/>
+        <location filename="app.cpp" line="268"/>
         <source>HostsTools V%1
 https://github.com/Nek-12/HostsTools
 By Nek.12 
@@ -33,7 +33,7 @@ t.me/Nek_12
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="app.cpp" line="259"/>
+        <location filename="app.cpp" line="267"/>
         <source>About HostsTools</source>
         <translation type="unfinished"></translation>
     </message>

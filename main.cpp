@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) try {
     App app{};
     qDebug() << "Checking command line args\n";
     if (QCoreApplication::arguments().size() > 1)
-        app.check_and_add_file(QCoreApplication::arguments().at(1));
+        app.add_file(QCoreApplication::arguments().at(1));
     app.show();
     qDebug() << "App window shown\n";
     return a.exec();
