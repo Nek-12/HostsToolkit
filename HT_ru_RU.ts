@@ -4,12 +4,12 @@
 <context>
     <name>App</name>
     <message>
-        <location filename="src/app.cpp" line="182"/>
+        <location filename="src/app.cpp" line="183"/>
         <source>Open a text or hosts file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="src/app.cpp" line="217"/>
+        <location filename="src/app.cpp" line="218"/>
         <source>Select the destination file</source>
         <translation type="unfinished"></translation>
     </message>

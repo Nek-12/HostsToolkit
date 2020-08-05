@@ -47,20 +47,16 @@ void DownloadManager::append(const QUrl &url) {
 }
 
 void DownloadManager::go() const {
-    //NOLINTNEXTLINE
+    // NOLINTNEXTLINE
     using namespace std::filesystem;
-    if (!exists(DL_FOLDER) ||
-        !is_directory(DL_FOLDER)) {
+    if (!exists(DL_FOLDER) || !is_directory(DL_FOLDER)) {
         create_directory(DL_FOLDER);
-    } else if (exists(DL_FOLDER) &&
-               is_directory(DL_FOLDER)) {
-        remove_all(DL_FOLDER); // delete temp folder
+    } else if (exists(DL_FOLDER) && is_directory(DL_FOLDER)) {
+        remove_all(DL_FOLDER); // delete an orphaned temp folder
         create_directory(DL_FOLDER);
     }
-    //TODO: Holy crap... Do better
-        // create a folder if needed
-        QTimer::singleShot(0, this,
-                           &DownloadManager::start_next_dl); // TODO: Test
+    // create a folder if needed
+    QTimer::singleShot(0, this, &DownloadManager::start_next_dl);
     // try to start the new download ASAP when the timer is called
     qDebug() << "Started download timer";
 }
@@ -75,10 +71,10 @@ void DownloadManager::start_next_dl() {
         emit all_finished(); // nothing to do
         return;
     }
-    QUrl url = downloadQueue.dequeue();       // else get the next item
-    QString filename = get_filename(url);     // get the future name
-    output.setFileName(filename);             // remember filename
-    if (!output.open(QIODevice::WriteOnly)) { // if not writable
+    QUrl    url      = downloadQueue.dequeue(); // else get the next item
+    QString filename = get_filename(url);       // get the future name
+    output.setFileName(filename);               // remember filename
+    if (!output.open(QIODevice::WriteOnly)) {   // if not writable
         auto s = QString("Problem opening file '%1' for download '%2': %3")
                      .arg(qPrintable(filename))
                      .arg(url.toEncoded().constData())
@@ -110,7 +106,7 @@ void DownloadManager::dl_progress(qint64 bytesReceived, qint64 bytesTotal) {
     if (bytesTotal >
         0) { //! bytestotal is -1 if we can't get the total size, handle it
         int pr = int(bytesReceived * 100 / bytesTotal);
-        assert(pr >= 0);   // TODO: Handle overflow more gracefully
+        assert(pr >= 0);
         emit progress(pr); // report it
     }
     // calculate the download speed
@@ -180,12 +176,11 @@ void DownloadManager::handle_redirect() {
     qDebug() << "Redirected to: " << redirectUrl.toDisplayString();
     append(redirectUrl); // try to download it then.
     --totalCount;
-    // TODO: Test
 }
 // append numbers until the filename is available and return it
 QString DownloadManager::get_filename(const QUrl & /*url*/) {
-    QString basename = DL_FOLDER DOWNLOADED_HOSTS_PREFIX;
-    int     i        = 0;
+    QString basename               = DL_FOLDER DOWNLOADED_HOSTS_PREFIX;
+    int                          i = 0;
     while (QFile::exists(basename + QString::number(i)))
         ++i;
     basename += QString::number(i);
@@ -201,7 +196,9 @@ bool DownloadManager::isHttpRedirect() const {
 
 void DownloadManager::stop() {
     if (cur_dl)
-        cur_dl->abort(); //! emits finished() on call
+        cur_dl->abort(); //! emits finished() on call,
+    // starts a recursive chain reaction of slots and signals
+    // which ends with slave::all_dls_finished with abort set to true.
     downloadQueue.clear();
     downloadedCount = 0;
     totalCount      = 0;

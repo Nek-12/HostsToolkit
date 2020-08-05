@@ -2,19 +2,14 @@
 #include "src/engine.h"
 #include <qmessagebox.h>
 #include <qnamespace.h>
-// TODO: Autoload config should add the system file, not ignore it
-// TODO: Change url text from browse to add...
-// TODO: Remove progressbar from the main window.
-// TODO: Make stop() less dirty;
-// TODO: Move the progress bar handling to Slave.
 App::App(QWidget *parent) :
     QMainWindow(parent), ui(new Ui::MainWindow), e(this) {
     ui->setupUi(this);
     qDebug() << "Created engine, connecting...";
     // ENGINE
     connect(&e, &Engine::stats, this, &App::upd_stats);
-    connect(&e, &Engine::ready, this, &App::on_engine_ready);
-    connect(&e, &Engine::failed, this, &App::on_engine_failed);
+    connect(&e, &Engine::ready, this, &App::engine_ready);
+    connect(&e, &Engine::failed, this, &App::engine_failed);
     connect(&e, &Engine::state_updated, this, &App::upd_pending_state);
     // UI
     connect(ui->CustomEntriesList, &QListWidget::itemActivated,
@@ -57,9 +52,12 @@ void App::load_config() {
         QString s = f.readLine();
         s         = s.remove('\n'); // remove all newlines and space
         s         = s.simplified(); // replace tabs and remove trailing spaces
-        if (s.isEmpty() || s == HOSTS || (!s.isEmpty() && s.startsWith('#')))
+        if (s.isEmpty() || (!s.isEmpty() && s.startsWith('#')))
             continue; // skip empty strings, system hosts, comments
-        // First section: >CUSTOM
+        if (s == HOSTS) {
+            sys_load();
+            continue;
+        }
         if (s.startsWith(SPLIT_CHAR)) {
             ++i;
             continue;
@@ -68,12 +66,8 @@ void App::load_config() {
         case 1: add_custom(s); break;
         case 2: add_file(s); break;
         case 3: add_url(s); break;
-        default:
-            display_warning(tr(CONFIG_ERROR_MSG));
+        default: display_warning(tr(CONFIG_ERROR_MSG));
         }
-        // TODO: Checkboxes states
-        // TODO: Handle blank and missing files properly, handle urls properly
-        // (check them!);
     }
 }
 void App::start_engine(const QString &path) {
@@ -95,8 +89,7 @@ void App::add_url(const QString &s) {
     if (check_url(s)) {
         e.add_url(s);
         new QListWidgetItem(s, ui->UrlsList);
-    }
-    else {
+    } else {
         display_warning(QString("Couldn't add URL: ").append(s));
     }
 }
@@ -116,7 +109,7 @@ void App::add_custom(const QString &s) {
     new QListWidgetItem(s, ui->CustomEntriesList);
 }
 
-void App::on_engine_ready() {
+void App::engine_ready() {
     QMessageBox::information(this, "Success",
                              "Your file was created successfully");
 }
@@ -127,17 +120,16 @@ App::~App() { delete ui; }
 
 void App::save_config() {
     std::ofstream f(CONFIG_FNAME);
-    if (!f)
-        throw std::runtime_error(
-            "Couldn't open file for saving configuration.");
-    f << "# HostsTools configuration file.\n"
-      << CREDITS << "# You may edit this file, "
-      << "but don't touch or change the order of the >HEADERs!\n";
+    if (!f) {
+        display_warning("Couldn't save your settings. The file is unavailable "
+                        "for writing.");
+        return;
+    }
     e.save_entries(f);
 }
 
 //      ----------UI--------
-void App::on_engine_failed(const QString &msg) {
+void App::engine_failed(const QString &msg) {
     QMessageBox::critical(
         this, "Saving failed",
         QString("Failed to download files and/or process them."
@@ -239,7 +231,6 @@ void App::sys_load() {
 void App::closeEvent(QCloseEvent *event) {
     save_config();
     e.stop();
-    e.deleteLater();
     QWidget::closeEvent(event);
 }
 
@@ -260,11 +251,6 @@ void App::upd_stats(const Stats &st) {
 }
 
 void App::msg(const QString &msg) { ui->Stats->showMessage(msg); }
-
-void App::upd_progress_bar(int val) {
-    ui->ProgressBar->setTextVisible(true);
-    ui->ProgressBar->setValue(val);
-}
 
 void App::about_clicked() {
     QMessageBox::about(this, tr("About HostsTools"),

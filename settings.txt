@@ -1,6 +1,6 @@
 # HostsTools configuration file.
 # This file was generated with HostsTools: https://github.com/Nek-12/HostsTools 
-# You may edit this file, but don't touch or change the order of the >HEADERs!
+# You may edit this file, but don't change the order of >HEADERs!
 > CUSTOM
 0.0.0.0 steampowered.com
 0.0.0.0 pornolab.net
@@ -8,6 +8,7 @@
 0.0.0.0 zerochan.org
 0.0.0.0 pixiv.net
 > FILES
+/etc/hosts
 > URLS
 https://github.com/4skinSkywalker/anti-porn-hosts-file/raw/master/HOSTS.txt
 https://github.com/Clefspeare13/pornhosts/raw/master/0.0.0.0/hosts
