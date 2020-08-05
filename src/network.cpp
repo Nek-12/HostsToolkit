@@ -184,9 +184,8 @@ void DownloadManager::handle_redirect() {
 }
 // append numbers until the filename is available and return it
 QString DownloadManager::get_filename(const QUrl & /*url*/) {
-    QString basename = DL_FOLDER "hosts";
+    QString basename = DL_FOLDER DOWNLOADED_HOSTS_PREFIX;
     int     i        = 0;
-    basename += '_';
     while (QFile::exists(basename + QString::number(i)))
         ++i;
     basename += QString::number(i);

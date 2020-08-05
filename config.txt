@@ -1,0 +1,14 @@
+# HostsTools configuration file.
+# This file was generated with HostsTools: https://github.com/Nek-12/HostsTools 
+# You may edit this file, but don't touch or change the order of the >HEADERs!
+> CUSTOM
+0.0.0.0 steampowered.com
+0.0.0.0 pornolab.net
+0.0.0.0 safebooru.donmai.us
+0.0.0.0 zerochan.org
+0.0.0.0 pixiv.net
+> FILES
+> URLS
+https://github.com/4skinSkywalker/anti-porn-hosts-file/raw/master/HOSTS.txt
+https://github.com/Clefspeare13/pornhosts/raw/master/0.0.0.0/hosts
+https://block.energized.pro/unified/formats/hosts

@@ -8,6 +8,7 @@
 #include <QtNetwork>
 #include <filesystem>
 
+#define DOWNLOADED_HOSTS_PREFIX "hosts_"
 #define DL_FOLDER ".temp/"
 bool check_url(const QUrl &url);
 

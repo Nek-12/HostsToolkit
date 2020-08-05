@@ -14,8 +14,8 @@
 #define TIME_MULTIPLIER 400
 #define HOSTS "C:/Windows/System32/drivers/etc/hosts"
 #endif
-#define VERSION "3.0.0"
-#define CONFIG_FNAME "custom.txt"
+#define VERSION "3.1.0"
+#define CONFIG_FNAME "settings.txt"
 // CONFIG has >CUSTOM, >FILES, >URLS in exactly this order!
 #define FILEERRORMSG                                                           \
     "Couldn't process your file! Select another location or launch the app "   \
@@ -47,8 +47,8 @@ public slots:
     void save_to_clicked();        // user clicks "save to..."
     void upd_pending_state();      // updates the availability of the save buttons
     void upd_progress_bar(int);    // Sets the value
-    void engine_ready();
-    void engine_failed(const QString &msg);
+    void on_engine_ready(); //when the work is done
+    void on_engine_failed(const QString &msg); //display error message and abort
     void del_url_clicked();
     void del_file_clicked();
     void del_custom_clicked();

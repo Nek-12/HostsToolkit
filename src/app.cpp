@@ -5,14 +5,16 @@
 // TODO: Autoload config should add the system file, not ignore it
 // TODO: Change url text from browse to add...
 // TODO: Remove progressbar from the main window.
+// TODO: Make stop() less dirty;
+// TODO: Move the progress bar handling to Slave.
 App::App(QWidget *parent) :
     QMainWindow(parent), ui(new Ui::MainWindow), e(this) {
     ui->setupUi(this);
     qDebug() << "Created engine, connecting...";
     // ENGINE
     connect(&e, &Engine::stats, this, &App::upd_stats);
-    connect(&e, &Engine::ready, this, &App::engine_ready);
-    connect(&e, &Engine::failed, this, &App::engine_failed);
+    connect(&e, &Engine::ready, this, &App::on_engine_ready);
+    connect(&e, &Engine::failed, this, &App::on_engine_failed);
     connect(&e, &Engine::state_updated, this, &App::upd_pending_state);
     // UI
     connect(ui->CustomEntriesList, &QListWidget::itemActivated,
@@ -43,7 +45,6 @@ App::App(QWidget *parent) :
     // MISC
     qDebug() << "Loading config...";
     load_config();
-    // TODO: Don't permit adding system hosts file two times, add check
 }
 //      ---------MISC-------
 
@@ -115,7 +116,7 @@ void App::add_custom(const QString &s) {
     new QListWidgetItem(s, ui->CustomEntriesList);
 }
 
-void App::engine_ready() {
+void App::on_engine_ready() {
     QMessageBox::information(this, "Success",
                              "Your file was created successfully");
 }
@@ -136,12 +137,13 @@ void App::save_config() {
 }
 
 //      ----------UI--------
-void App::engine_failed(const QString &msg) {
+void App::on_engine_failed(const QString &msg) {
     QMessageBox::critical(
         this, "Saving failed",
         QString("Failed to download files and/or process them."
                 "Check URLs and files you added. \n%1")
             .arg(msg));
+    upd_pending_state();
 }
 
 void App::del_url_clicked() {
@@ -187,7 +189,7 @@ void App::add_file_clicked() {
     if (!path.isEmpty())
         add_file(path);
 }
-// TODO: Add a progress dialog and the ability to cancel
+
 void App::add_url_clicked() {
     QString text = QInputDialog::getText(
         this, "Enter the URL",
