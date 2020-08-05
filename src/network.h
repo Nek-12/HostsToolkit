@@ -7,9 +7,8 @@
 #include <QtCore>
 #include <QtNetwork>
 #include <filesystem>
+#include "src/const.h"
 
-#define DOWNLOADED_HOSTS_PREFIX "hosts_"
-#define DL_FOLDER ".temp/"
 bool check_url(const QUrl &url);
 
 class DownloadManager : public QObject {

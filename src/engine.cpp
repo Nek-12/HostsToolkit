@@ -15,10 +15,10 @@ Engine::Engine(QObject* parent) : QObject(parent) {
     progress_bar_ptr =
         new QProgressDialog("Building hosts file...", "Abort", 0, 100);
     progress_bar_ptr->setWindowTitle("Please stand by...");
-    progress_bar_ptr->setAutoClose(true);
-    progress_bar_ptr->setWindowModality(Qt::WindowModal);
-    progress_bar_ptr->setAutoReset(false);
-    progress_bar_ptr->reset();
+    progress_bar_ptr->setAutoClose(true); //close on reset()
+    progress_bar_ptr->setWindowModality(Qt::WindowModal); //detach from the rest of the app
+    progress_bar_ptr->setAutoReset(false); //don't reset() on 100%
+    progress_bar_ptr->reset(); //hide the window
     qDebug() << "Created and hidden the progress window";
     connect(progress_bar_ptr, &QProgressDialog::canceled, this, &Engine::stop);
 }
@@ -51,13 +51,13 @@ void Engine::start_work(const std::string& hosts, bool rem_comments,
 }
 
 void Engine::thread_success() {
-    stop();
+    stop(); //cleanup
     emit ready();
 }
 
 void Engine::thread_failure(const QString& msg) {
     stop();
-    pending = true;
+    pending = true; //allow retrials
     emit state_updated();
     emit failed(msg);
 }
@@ -73,12 +73,12 @@ Engine::~Engine() {
 void Engine::stop() {
     if (slave) {
         slave->stop();
-        slave->wait();
+        slave->wait(); //wait for the thread to clean up
         delete slave;
         slave = nullptr;
     }
     fs::remove_all(DL_FOLDER); // delete temp folder
-    progress_bar_ptr->reset();
+    progress_bar_ptr->reset(); //hide the window
 }
 
 void Engine::add_custom(const std::string& item) {
@@ -112,6 +112,8 @@ void Engine::rem_url(size_t row) {
     emit state_updated();
 }
 
+// save stuff
+//TODO: Why take ofstream& argument when you can open the file yourself?
 void Engine::save_entries(std::ofstream& f) {
     f << "# HostsTools configuration file.\n"
       << CREDITS << "# You may edit this file, "
@@ -137,7 +139,9 @@ Slave::Slave(QObject* parent, bool rem_comments, bool rem_dups,
     dl_mgr(this), rem_comments(rem_comments), rem_dups(rem_dups),
     add_credits(add_credits), add_stats(add_stats),
     filepaths(std::move(filepaths)), custom_lines(std::move(custom_lines)),
-    path(std::move(path)) {
+    path(std::move(path))
+    // Body
+    {
     connect(&dl_mgr, &DownloadManager::message, this, &Slave::message);
     connect(&dl_mgr, &DownloadManager::all_finished, this,
             &Slave::all_dls_finished);
@@ -165,8 +169,8 @@ void Slave::all_dls_finished() try {
     QString msg = "Processing files... \n";
     qDebug() << msg;
     emit       message(msg);                   // send info periodically
-    qulonglong commented_lines = 0, total = 0; // for stats
-                                               // 1. Add credits
+    qulonglong commented_lines = 0;
+    // 1. Add credits
     if (add_credits)
         ret << CREDITS;
     // 2. Add custom entries
@@ -235,7 +239,6 @@ void Slave::all_dls_finished() try {
             if (!pair.second.empty())
                 strset.insert(pair.second);
         }
-        total = strset.size(); // without duplicates
         for (const auto& s : strset)
             ret << s << '\n'; // save the changes, no duplicates
     } else {                  // don't remove duplicates
@@ -254,7 +257,6 @@ void Slave::all_dls_finished() try {
             if (!pair.second.empty())
                 strvec.push_back(pair.second);
         }
-        total = strvec.size();
         for (const auto& s : strvec) {
             ret << s << '\n'; // write every line back
         }
@@ -266,7 +268,6 @@ void Slave::all_dls_finished() try {
         emit        message("Getting your statistics...");
         Stats       st;
         char        symbol = 0;
-        std::string opt;
         emit        progress(10);
         symbol = '#';
         st.comments += std::count(std::istreambuf_iterator<char>(ret),
@@ -276,15 +277,15 @@ void Slave::all_dls_finished() try {
             return;
         symbol = '\n';
         st.lines += std::count(std::istreambuf_iterator<char>(ret),
-                               std::istreambuf_iterator<char>(), symbol);
+                               std::istreambuf_iterator<char>(), symbol); //end result
         if (abort)
             return;
         emit progress(90);
 #ifdef TIME_MULTIPLIER
-        stats.seconds_added = stats.lines / TIME_MULTIPLIER;
+        st.seconds_added = st.lines / TIME_MULTIPLIER;
 #endif
         qDebug() << st.lines << " total lines in the resulting file";
-        st.removed = st.lines - total; // total does not include duplicates
+        st.removed = total_lines - st.lines; // toal_lines (before optimizing) - st.lines (after)
         st.sources =
             dl_mgr.get_total() + filepaths.size() + 1; // 1 for custom lines
         st.size = fs::file_size(path);                 // in bytes

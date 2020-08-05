@@ -1,4 +1,5 @@
 #pragma once
+#include "src/const.h"
 #include "src/network.h"
 #include <QThread>
 #include <filesystem>
@@ -8,10 +9,6 @@
 #include <qurl.h>
 #include <qwaitcondition.h>
 #include <set>
-#define SPLIT_CHAR '>'
-#define CREDITS                                                                \
-    "# This file was generated with HostsTools: "                              \
-    "https://github.com/Nek-12/HostsTools \n"
 struct Stats {
     qulonglong lines         = 0;
     qulonglong size          = 0; // In bytes
@@ -82,10 +79,9 @@ public:
         return slave;
     } // nullptr -> not working
 public slots:
-    // get results from the slave
     void thread_success();
     void thread_failure(const QString& msg);
-    void stop();
+    void stop(); //immediately abort the work
     void progress(int);           // signals the percentage of work done
     void message(const QString&); // signals any messages
 
@@ -93,8 +89,7 @@ signals:
     void ready();                    // finished work
     void failed(const QString& msg); // couldn't finish
     void stats(Stats);
-
-    void state_updated();
+    void state_updated(); //-> are changes pending or not?
 
 private:
     QProgressDialog*         progress_bar_ptr = nullptr;

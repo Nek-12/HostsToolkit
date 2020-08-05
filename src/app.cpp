@@ -6,12 +6,12 @@ App::App(QWidget *parent) :
     QMainWindow(parent), ui(new Ui::MainWindow), e(this) {
     ui->setupUi(this);
     qDebug() << "Created engine, connecting...";
-    // ENGINE
+    // ---------ENGINE------
     connect(&e, &Engine::stats, this, &App::upd_stats);
     connect(&e, &Engine::ready, this, &App::engine_ready);
     connect(&e, &Engine::failed, this, &App::engine_failed);
     connect(&e, &Engine::state_updated, this, &App::upd_pending_state);
-    // UI
+    // ----------UI----------
     connect(ui->CustomEntriesList, &QListWidget::itemActivated,
             ui->CustomEntriesList, &QListWidget::openPersistentEditor);
     connect(ui->CustomEntriesList, &QListWidget::currentItemChanged,
@@ -37,11 +37,11 @@ App::App(QWidget *parent) :
     connect(ui->DeleteUrlButton, &QPushButton::clicked, this,
             &App::del_url_clicked);
 
-    // MISC
+    //--MISC--
     qDebug() << "Loading config...";
     load_config();
 }
-//      ---------MISC-------
+//      ---------MISC---------
 
 void App::load_config() {
     QFile f(CONFIG_FNAME);
@@ -55,9 +55,12 @@ void App::load_config() {
         if (s.isEmpty() || (!s.isEmpty() && s.startsWith('#')))
             continue; // skip empty strings, system hosts, comments
         if (s == HOSTS) {
-            sys_load();
+            sys_load(); //do not let the system hosts entry be duplicated if it was saved
             continue;
         }
+        // Config file sections are handled by their order.
+        // There may be better solution, but for now it is the best I could
+        // think of without involvind 3rd-party libs
         if (s.startsWith(SPLIT_CHAR)) {
             ++i;
             continue;
@@ -70,40 +73,44 @@ void App::load_config() {
         }
     }
 }
+
 void App::start_engine(const QString &path) {
-    std::string sp = path.toStdString();
-    if (!sp.empty()) {
-        std::ofstream f(sp);
+    std::string sp = path.toStdString(); //convert to a faster std string
+    if (!sp.empty()) { //if the user selected something (dialogbox could return "")
+        std::ofstream f(sp); //if we can open the file
         if (f) {
             e.start_work(sp, ui->RemCommentsBox->isChecked(),
                          ui->RemDupsBox->isChecked(),
                          ui->AddCreditsBox->isChecked(),
                          ui->AddStatsBox->isChecked());
-            return;
+            //send the state and create a thread
+            return; //ui is still responsive
         }
         display_warning(FILEERRORMSG);
     }
 }
 
 void App::add_url(const QString &s) {
-    if (check_url(s)) {
-        e.add_url(s);
-        new QListWidgetItem(s, ui->UrlsList);
+    if (check_url(s)) { //if the url is valid (network is available)
+        e.add_url(s); //send to Engine
+        new QListWidgetItem(s, ui->UrlsList); //add text
     } else {
         display_warning(QString("Couldn't add URL: ").append(s));
     }
 }
+
 void App::add_file(const QString &s) {
     qDebug() << "load_file called";
     QFile f(s);
-    if (f.open(QIODevice::ReadOnly)) {
+    if (f.open(QIODevice::ReadOnly)) { //at least check for read access
         e.add_file(s.toStdString());
         new QListWidgetItem(s, ui->FileList);
-        qDebug() << "Added the file " << s;
+        qDebug() << "Added the file: " << s;
     } else {
         display_warning(tr(FILEERRORMSG));
     }
 }
+
 void App::add_custom(const QString &s) {
     e.add_custom(s.toStdString());
     new QListWidgetItem(s, ui->CustomEntriesList);
@@ -111,12 +118,11 @@ void App::add_custom(const QString &s) {
 
 void App::engine_ready() {
     QMessageBox::information(this, "Success",
-                             "Your file was created successfully");
+                             "Your file was saved successfully");
 }
 
+//display text in the statusbar
 void App::display_msg(const QString &msg) { ui->Stats->showMessage(msg); }
-
-App::~App() { delete ui; }
 
 void App::save_config() {
     std::ofstream f(CONFIG_FNAME);
@@ -128,7 +134,10 @@ void App::save_config() {
     e.save_entries(f);
 }
 
+App::~App() { delete ui; }
+
 //      ----------UI--------
+
 void App::engine_failed(const QString &msg) {
     QMessageBox::critical(
         this, "Saving failed",
@@ -136,11 +145,12 @@ void App::engine_failed(const QString &msg) {
                 "Check URLs and files you added. \n%1")
             .arg(msg));
     upd_pending_state();
+    //engine will clean up for us
 }
 
 void App::del_url_clicked() {
     auto *item = ui->UrlsList->currentItem();
-    if (!item)
+    if (!item) //if the user did not select anything but still clicks
         return;
     auto row = ui->UrlsList->currentRow();
     e.rem_file(row);
@@ -166,29 +176,31 @@ void App::del_custom_clicked() {
 
 void App::add_custom_clicked() {
     auto entry = ui->CustomEntryField->text();
+    // Since hosts are case insensitive and treat tabs as spaces
+    entry = entry.simplified().toLower();
     if (!entry.isEmpty())
         add_custom(entry);
-    ui->CustomEntryField->setText("");
+    ui->CustomEntryField->setText(""); //erase text that was in the field
 }
 
 void App::add_file_clicked() {
     auto path = QFileDialog::getOpenFileName(
-        this, tr("Open a text or hosts file"), HOSTS);
+        this, tr("Open a text or hosts file"), HOSTS); //get the file path
     if (path == HOSTS) {
         sys_load();
         return;
     }
-    if (!path.isEmpty())
+    if (!path.isEmpty()) //if the user did select something
         add_file(path);
 }
 
 void App::add_url_clicked() {
     QString text = QInputDialog::getText(
         this, "Enter the URL",
-        "Enter the path to the file: ", QLineEdit::Normal);
+        "Enter the address of the file: ", QLineEdit::Normal);
     if (text.isEmpty())
         return;
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < URL_RETRIALS_CNT; ++i) {
         if (check_url(QUrl::fromEncoded(text.toLocal8Bit()))) {
             add_url(text);
             return;
@@ -196,12 +208,12 @@ void App::add_url_clicked() {
     }
     QMessageBox::critical(
         this, "Invalid URL",
-        "The URL you entered is not available/valid. Aborted after 5 retrials");
+        QString("The URL you entered is not available/valid. Aborted after %1 retrials").arg(URL_RETRIALS_CNT));
 }
 
 void App::apply_clicked() {
     if (!e.is_pending() || !e.sources())
-        return;
+        return; //if there is nothing, just ignore
     start_engine(HOSTS);
 }
 void App::save_to_clicked() {
@@ -212,10 +224,12 @@ void App::save_to_clicked() {
     d.setFileMode(QFileDialog::AnyFile);
     d.selectFile("hosts");
     path = d.getSaveFileName();
-    start_engine(path);
+    if (!path.isEmpty())
+        start_engine(path);
 }
 
 void App::upd_pending_state() {
+    //disable apply buttons if the user did not modify anything since last time.
     ui->ApplyFileButton->setEnabled(e.is_pending());
     ui->SaveToButton->setEnabled(e.is_pending());
 }
@@ -223,15 +237,18 @@ void App::upd_pending_state() {
 void App::sys_load() {
     if (sys_loaded)
         return;
+    //don't allow multiple calls
     ui->LoadSystemHosts->setEnabled(false);
     sys_loaded = true;
     add_file(HOSTS);
 }
 
+//on [X] pressed
 void App::closeEvent(QCloseEvent *event) {
     save_config();
-    e.stop();
+    e.stop(); //cleanup
     QWidget::closeEvent(event);
+    //QT will handle the memory for us
 }
 
 void App::upd_stats(const Stats &st) {
@@ -243,7 +260,7 @@ void App::upd_stats(const Stats &st) {
            "Seconds added to boot up process (Approximate): %5 \n"
            "Total lines removed: %6")
             .arg(st.lines)
-            .arg(double(st.size) / 1000)
+            .arg(double(st.size) / 1000) //convert B to kB
             .arg(st.comments)
             .arg(st.sources)
             .arg(st.seconds_added)
@@ -257,7 +274,7 @@ void App::about_clicked() {
                        tr("HostsTools V%1\n"
                           "https://github.com/Nek-12/HostsTools\n"
                           "By Nek.12 \n"
-                          "t.me/Nek_12\n")
+                          "t.me/Nek_12\n\n" LICENSE"\n")
                            .arg(VERSION));
 }
 

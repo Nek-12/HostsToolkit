@@ -1,6 +1,7 @@
 #include "src/app.h"
 #include <QApplication>
 #include <QTranslator>
+#include "src/const.h"
 
 void crash(
     const std::string&    msg = "",
