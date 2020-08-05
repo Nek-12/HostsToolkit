@@ -1,9 +1,10 @@
-#include "app.h"
-#include "engine.h"
+#include "src/app.h"
+#include "src/engine.h"
 #include <qmessagebox.h>
 #include <qnamespace.h>
-// TODO: Add translations
-
+// TODO: Autoload config should add the system file, not ignore it
+// TODO: Change url text from browse to add...
+// TODO: Remove progressbar from the main window.
 App::App(QWidget *parent) :
     QMainWindow(parent), ui(new Ui::MainWindow), e(this) {
     ui->setupUi(this);

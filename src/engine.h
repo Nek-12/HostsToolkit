@@ -1,5 +1,5 @@
 #pragma once
-#include "network.h"
+#include "src/network.h"
 #include <QThread>
 #include <filesystem>
 #include <fstream>
@@ -13,19 +13,6 @@
 #define CREDITS                                                                \
     "# This file was generated with HostsTools: "                            \
     "https://github.com/Nek-12/HostsTools \n"
-// TODO: Comment code
-// TODO: Add mutex or disallow saving file until the thread has finished!
-// TODO: Handle failing downloads or too slow downloads
-// TODO: Open a new progressbar window. The feedback right now is nonexistent
-// TODO: Fix that free() error
-// TODO: The entries from the config aren't being added for some reason. Why?
-// TODO: Don't let exceptions propagate through QT code. Handle them/replace
-// them with warnings
-// TODO: Test the app with 10+ sources. Test performance
-// TODO: Clean up the access levels.
-// TODO: Move the string constants to well, constants.
-// TODO: Move the code about saving the file to Slave
-// TODO: Remove progressbar from the main window.
 struct Stats {
     qulonglong lines         = 0;
     qulonglong size          = 0; // In bytes

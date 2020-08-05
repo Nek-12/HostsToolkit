@@ -1,6 +1,6 @@
 #include <QApplication>
 #include <QTranslator>
-#include "app.h"
+#include "src/app.h"
 
 
 void crash(const std::string& msg = "", const std::exception& e = std::runtime_error("Unknown error")) noexcept {

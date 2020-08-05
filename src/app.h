@@ -1,6 +1,6 @@
 #pragma once
 #include "./ui_app.h"
-#include "engine.h"
+#include "src/engine.h"
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QMainWindow>

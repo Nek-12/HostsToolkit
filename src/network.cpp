@@ -3,7 +3,7 @@
 ** Contact: https://www.qt.io/licensing/
 ** This file is based on the Download Manager example of the Qt Toolkit.
 */
-#include "network.h"
+#include "src/network.h"
 #include <filesystem>
 //
 bool check_url(const QUrl &url) {

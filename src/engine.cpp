@@ -1,5 +1,5 @@
-#include "engine.h"
-#include "network.h"
+#include "src/engine.h"
+#include "src/network.h"
 #include <qdebug.h>
 #include <qobject.h>
 #include <qprogressdialog.h>
