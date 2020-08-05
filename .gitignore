@@ -224,7 +224,7 @@ download
 .vscode
 
 # custom entries file
-**/custom.txt
+**/*.txt
 **/.temp
 
 # clang

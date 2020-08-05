@@ -22,7 +22,7 @@
 // -----------STRINGS-----------
 
 #define FILEERRORMSG                                                           \
-    "Couldn't process your file! Select another location or launch the app "   \
+    "Couldn't read or write your file! Select another location or launch the app "   \
     "with admin privileges."
 
 #define CONFIG_ERROR_MSG                                                       \

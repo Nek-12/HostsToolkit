@@ -182,6 +182,8 @@ void Slave::all_dls_finished() try {
     for (const auto& fname : filepaths) { // for every file specified
         if (abort)
             return;
+        if (fname == path) //the user saved to the file they loaded...
+            throw std::runtime_error("Tried to save to the file which was loaded. Why?..");
         std::ifstream f(fname);
         if (f) { // open, read
             f_contents << f.rdbuf();
@@ -213,14 +215,16 @@ void Slave::all_dls_finished() try {
     }
     size_t total_lines = 0; //! Possible division by zero
     if (add_stats) {        // count the contents of both streams
-        //? ret.clear();
+        ret.clear();
+        ret.seekg(std::ios::beg);
         total_lines += std::count(std::istreambuf_iterator<char>(ret),
                                   std::istreambuf_iterator<char>(), '\n');
         qDebug() << "total_lines before merging files: " << total_lines;
         auto s = f_contents.str();
         total_lines += std::count(s.begin(), s.end(), '\n');
+        assert(total_lines > 0); // overflow
     }
-    assert(total_lines > 0); // overflow
+
     qDebug() << "Starting to merge files";
     // 5. Process the data in the files
     if (rem_dups) {
@@ -270,12 +274,14 @@ void Slave::all_dls_finished() try {
         char        symbol = 0;
         emit        progress(10);
         symbol = '#';
+        ret.seekg(std::ios::beg);
         st.comments += std::count(std::istreambuf_iterator<char>(ret),
                                   std::istreambuf_iterator<char>(), symbol);
         emit progress(50);
         if (abort)
             return;
         symbol = '\n';
+        ret.seekg(std::ios::beg);
         st.lines += std::count(std::istreambuf_iterator<char>(ret),
                                std::istreambuf_iterator<char>(), symbol); //end result
         if (abort)
@@ -298,7 +304,6 @@ void Slave::all_dls_finished() try {
     auto msg = QString::fromStdString(e.what());
     qDebug() << msg;
     emit failure(msg);
-    stop();
     return;
 }
 
