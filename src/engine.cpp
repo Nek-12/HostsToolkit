@@ -113,11 +113,12 @@ bool Engine::save_entries(const std::string& path) {
 
 // Create and apply the file. The most important function
 void Engine::all_dls_finished() try {
+    report_speed("Working on files...");
     auto check = [this]() {
         if (abort)
             throw std::runtime_error("Operation aborted");
     };
-    //if abort was set before donwloads have finished, then the error has already been reported.
+    //if abort was set before downloads have finished, then the error has already been reported.
     if (abort) {
         stop();
         return;
