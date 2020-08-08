@@ -124,29 +124,14 @@ void Engine::all_dls_finished() try {
         return;
     }
     qDebug() << "Starting to work on file, path: " << QString::fromStdString(path);
-    std::fstream ret(
-        path, std::fstream::in | std::fstream::out |
-                  std::fstream::trunc); // open a file rw, create if needed.
-    //file system dialog will warn the user about overwriting for us.
-    if (!ret)
-        throw std::runtime_error(std::string("Couldn't open file: ").append(path));
     QString msg = "Processing files... \n";
     qDebug() << msg;
     emit       message(msg);                   // send info periodically
     qulonglong commented_lines = 0;
-    // 1. Add credits
-    if (credits)
-        ret << CREDITS;
-    // 2. Add custom entries
-    ret << "\n# ------------- C U S T O M ------------- \n";
-    for (const auto& l : custom_lines)
-        ret << l << '\n';
-    // 3. Process downloaded files
+    // 1. Process custom files (first to avoid rewriting the file we loaded. It might be in the list of files!)
     std::stringstream f_contents;
     for (const auto& fname : filepaths) { // for every file specified
         check();
-        if (fname == path) //the user saved to the file they loaded...
-            throw std::runtime_error("Tried to save to the file which is loaded. Why?..");
         std::ifstream f(fname);
         if (f) { // open, read
             f_contents << f.rdbuf();
@@ -155,7 +140,7 @@ void Engine::all_dls_finished() try {
                 std::string("Couldn't open specified file: ").append(fname));
         }
     }
-    // 4. Add the files we downloaded
+    // 2. Add the files we downloaded
     msg = "Processing downloaded sources... \n";
     qDebug() << msg;
     emit message(msg);
@@ -175,6 +160,21 @@ void Engine::all_dls_finished() try {
                 std::string("Couldn't open file:").append(p.path()));
         }
     }
+    // 3. Open and clear the desired file
+    std::fstream ret(
+        path, std::fstream::in | std::fstream::out |
+                  std::fstream::trunc); // open a file rw, create if needed.
+    // file system dialog will warn the user about overwriting for us.
+    if (!ret)
+        throw std::runtime_error(
+            std::string("Couldn't open file: ").append(path));
+    // 4. Add credits
+    if (credits)
+        ret << CREDITS;
+    // 5. Add custom entries
+    ret << "\n# ------------- C U S T O M ------------- \n";
+    for (const auto& l : custom_lines)
+        ret << l << '\n';
     size_t total_lines = 0; //! Possible division by zero
     if (stats) {        // count the contents of both streams
         ret.clear();
@@ -186,9 +186,8 @@ void Engine::all_dls_finished() try {
         total_lines += std::count(s.begin(), s.end(), '\n');
         assert(total_lines > 0); // overflow
     }
-
     qDebug() << "Starting to merge files";
-    // 5. Process the data in the files
+    // 6. Process the data in the files
     if (dups) {
         ret << "\n# ------------- DEDUPLICATED AND SORTED ------------- \n";
         std::set<std::string> strset; // set does not store duplicates
@@ -227,7 +226,7 @@ void Engine::all_dls_finished() try {
     }
     f_contents.clear(); // reduce memory overhead
     qDebug() << "Finished merging files";
-    // 6. Get remaining statistics
+    // 7. Get remaining statistics
     if (stats) { // save calculation time by skipping
         emit        message("Getting your statistics...");
         Stats       st;
