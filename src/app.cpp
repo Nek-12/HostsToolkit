@@ -2,15 +2,19 @@
 #include "src/engine.h"
 #include <qmessagebox.h>
 #include <qnamespace.h>
-App::App(QWidget *parent) :
-    QMainWindow(parent), ui(new Ui::MainWindow), e(this) {
+App::App(QWidget* parent) :
+    QMainWindow(parent), ui(new Ui::MainWindow), e(this),
+    secondary_thread(), progress_bar(this) {
     ui->setupUi(this);
-    qDebug() << "Created engine, connecting...";
     // ---------ENGINE------
-    connect(&e, &Engine::stats, this, &App::upd_stats);
-    connect(&e, &Engine::ready, this, &App::engine_ready);
+    e.moveToThread(secondary_thread);
+    connect(&e, &Engine::stats_ready, this, &App::upd_stats);
+    connect(&e, &Engine::success, this, &App::engine_ready);
     connect(&e, &Engine::failed, this, &App::engine_failed);
     connect(&e, &Engine::state_updated, this, &App::upd_pending_state);
+    connect(&e, &Engine::message, this, &App::msg);
+    connect(&e, &Engine::progress, this, &App::set_progress);
+    qDebug() << "Created engine";
     // ----------UI----------
     connect(ui->CustomEntriesList, &QListWidget::itemActivated,
             ui->CustomEntriesList, &QListWidget::openPersistentEditor);
@@ -36,7 +40,13 @@ App::App(QWidget *parent) :
             &App::del_file_clicked);
     connect(ui->DeleteUrlButton, &QPushButton::clicked, this,
             &App::del_url_clicked);
-
+    ///--PROGRESS DIALOG--
+    progress_bar.setWindowModality(
+        Qt::WindowModal);                  // block the app window on show()
+    progress_bar.setAutoReset(false); // don't reset() on 100%
+    progress_bar.reset();             // hide the window
+    connect(&progress_bar, &QProgressDialog::canceled, &e, &Engine::stop);
+    qDebug() << "Created and hidden the progress window";
     //--MISC--
     qDebug() << "Loading config...";
     load_config();
@@ -74,19 +84,14 @@ void App::load_config() {
     }
 }
 
-void App::start_engine(const QString &path) {
-    std::string sp = path.toStdString(); //convert to a faster std string
-    if (!sp.empty()) { //if the user selected something (dialogbox could return "")
-        std::ofstream f(sp); //if we can open the file
-        if (f) {
-            e.start_work(sp, ui->RemCommentsBox->isChecked(),
+void App::start_engine(const QString& path) {
+    progress_bar.show();
+    if (!path.isEmpty() && path.isSimpleText() ) { //if the user selected something (dialogbox could return "")
+        e.start_work(path.toStdString(), ui->RemCommentsBox->isChecked(),
                          ui->RemDupsBox->isChecked(),
                          ui->AddCreditsBox->isChecked(),
                          ui->AddStatsBox->isChecked());
-            //send the state and create a thread
-            return; //ui is still responsive
-        }
-        display_warning(FILEERRORMSG);
+        //send the state and create a thread
     }
 }
 
@@ -117,32 +122,20 @@ void App::add_custom(const QString &s) {
 }
 
 void App::engine_ready() {
+    progress_bar.reset();
     QMessageBox::information(this, "Success",
                              "Your file was saved successfully");
-}
-
-//display text in the statusbar
-void App::display_msg(const QString &msg) { ui->Stats->showMessage(msg); }
-
-void App::save_config() {
-    std::ofstream f(CONFIG_FNAME);
-    if (!f) {
-        display_warning("Couldn't save your settings. The file is unavailable "
-                        "for writing.");
-        return;
-    }
-    e.save_entries(f);
 }
 
 App::~App() { delete ui; }
 
 //      ----------UI--------
 
-void App::engine_failed(const QString &msg) {
+void App::engine_failed(const QString& msg) {
+    progress_bar.reset();
     QMessageBox::critical(
         this, "Saving failed",
-        QString("Failed to download files and/or process them."
-                "Check URLs and files you added. \n%1")
+        QString("Failed to download files and/or process them. \n%1")
             .arg(msg));
     upd_pending_state();
     //engine will clean up for us
@@ -245,8 +238,10 @@ void App::sys_load() {
 
 //on [X] pressed
 void App::closeEvent(QCloseEvent *event) {
-    save_config();
-    e.stop(); //cleanup
+    if (!e.save_entries(CONFIG_FNAME))
+        display_warning("Couldn't save your settings!");
+    e.stop(); // cleanup
+    secondary_thread->wait();
     QWidget::closeEvent(event);
     //QT will handle the memory for us
 }
@@ -267,7 +262,7 @@ void App::upd_stats(const Stats &st) {
             .arg(st.removed));
 }
 
-void App::msg(const QString &msg) { ui->Stats->showMessage(msg); }
+void App::msg(const QString& s) { progress_bar.setLabelText(s); }
 
 void App::about_clicked() {
     QMessageBox::about(this, tr("About HostsTools"),
@@ -281,3 +276,5 @@ void App::about_clicked() {
 void App::display_warning(const QString &msg) {
     QMessageBox::warning(this, "Warning!", msg);
 }
+
+void App::set_progress(int n) { progress_bar.setValue(n); }

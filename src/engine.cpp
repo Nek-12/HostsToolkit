@@ -10,75 +10,50 @@
 namespace fs = std::filesystem;
 
 //          -------------ENGINE------------
-Engine::Engine(QObject* parent) : QObject(parent) {
+Engine::Engine(QObject* parent = nullptr) : QObject(parent) {
     qDebug() << "Creating an Engine...";
-    progress_bar_ptr =
-        new QProgressDialog("Building hosts file...", "Abort", 0, 100);
-    progress_bar_ptr->setWindowTitle("Please stand by...");
-    progress_bar_ptr->setAutoClose(true); //close on reset()
-    progress_bar_ptr->setWindowModality(Qt::WindowModal); //detach from the rest of the app
-    progress_bar_ptr->setAutoReset(false); //don't reset() on 100%
-    progress_bar_ptr->reset(); //hide the window
-    qDebug() << "Created and hidden the progress window";
-    connect(progress_bar_ptr, &QProgressDialog::canceled, this, &Engine::stop);
+    connect(&dl_mgr, &DownloadManager::message, this, &Engine::message);
+    connect(&dl_mgr, &DownloadManager::all_finished, this,
+            &Engine::all_dls_finished);
+    connect(&dl_mgr, &DownloadManager::dl_failed, this, &Engine::stop);
+    connect(&dl_mgr, &DownloadManager::dl_failed, this, &Engine::failed);
+    connect(&dl_mgr, &DownloadManager::progress, this, &Engine::progress);
+    // Add downloads, but don't go yet.
 }
 
-void Engine::start_work(const std::string& hosts, bool rem_comments,
+void Engine::start_work(const std::string& hosts_path, bool rem_comments,
                         bool rem_dups, bool add_credits, bool add_stats) {
-    if (slave) {
+    comms = rem_comments;
+    dups  = rem_dups;
+    credits = add_credits;
+    stats   = add_stats; // save the data for later
+    path = hosts_path;
+    if (working) {
         emit failed("The process is already running");
         return;
     }
-    progress_bar_ptr->reset();
-    qDebug() << "Employing a slave...";
-    slave   = new Slave(this, rem_comments, rem_dups, add_credits, add_stats,
-                      filepaths, custom_lines, urls, hosts);
+    qDebug() << "Starting work";
     pending = false;
     emit state_updated();
-    // connect the thread
-    connect(slave, &Slave::success, this,
-            &Engine::thread_success); // signal success
-    connect(slave, &Slave::failure, this,
-            &Engine::thread_failure); // signal failure
-    connect(slave, &Slave::progress, this, &Engine::progress);
-    connect(slave, &Slave::message, this, &Engine::message);
-    connect(slave, &Slave::stats, this, &Engine::stats);
-    qDebug() << "Showing the progressbar";
-    progress_bar_ptr->show();
-    qDebug() << "Starting engine's slave";
-    slave->start();
-    // forget about the slave for now
-}
-
-void Engine::thread_success() {
-    stop(); //cleanup
-    emit ready();
-}
-
-void Engine::thread_failure(const QString& msg) {
-    stop();
-    pending = true; //allow retrials
-    emit state_updated();
-    emit failed(msg);
-}
-
-void Engine::progress(int n) { progress_bar_ptr->setValue(n); }
-void Engine::message(const QString& s) { progress_bar_ptr->setLabelText(s); }
-
-Engine::~Engine() {
-    stop();
-    delete progress_bar_ptr;
+    emit message("Downloading files...");
+    for (const auto& u : urls)
+        dl_mgr.append(u);
+    abort = false;
+    dl_mgr.go(); // begin downloading and wait...
+    // forget about the engine for now
 }
 
 void Engine::stop() {
-    if (slave) {
-        slave->stop();
-        slave->wait(); //wait for the thread to clean up
-        delete slave;
-        slave = nullptr;
-    }
+    qDebug() << "Ordered engine to stop";
+    abort = true;
+    pending = true;
+    dl_mgr.stop();
     fs::remove_all(DL_FOLDER); // delete temp folder
-    progress_bar_ptr->reset(); //hide the window
+    emit state_updated();
+}
+
+Engine::~Engine() {
+    stop();
 }
 
 void Engine::add_custom(const std::string& item) {
@@ -113,8 +88,10 @@ void Engine::rem_url(size_t row) {
 }
 
 // save stuff
-//TODO: Why take ofstream& argument when you can open the file yourself?
-void Engine::save_entries(std::ofstream& f) {
+bool Engine::save_entries(const std::string& path) {
+    std::ofstream f(path);
+    if (!f)
+        return false;
     f << "# HostsTools configuration file.\n"
       << CREDITS << "# You may edit this file, "
       << "but don't change the order of >HEADERs!\n";
@@ -127,51 +104,22 @@ void Engine::save_entries(std::ofstream& f) {
     f << SPLIT_CHAR << " URLS\n";
     for (const auto& el : urls)
         f << el.toString().toStdString() << '\n';
-}
-
-//              -----------SLAVE-----------
-Slave::Slave(QObject* parent, bool rem_comments, bool rem_dups,
-             bool add_credits, bool add_stats,
-             std::vector<std::string> filepaths,
-             std::vector<std::string> custom_lines,
-             const std::vector<QUrl>& urls, std::string path) :
-    QThread(parent),
-    dl_mgr(this), rem_comments(rem_comments), rem_dups(rem_dups),
-    add_credits(add_credits), add_stats(add_stats),
-    filepaths(std::move(filepaths)), custom_lines(std::move(custom_lines)),
-    path(std::move(path))
-    // Body
-    {
-    connect(&dl_mgr, &DownloadManager::message, this, &Slave::message);
-    connect(&dl_mgr, &DownloadManager::all_finished, this,
-            &Slave::all_dls_finished);
-    connect(&dl_mgr, &DownloadManager::dl_failed, this, &Slave::failure);
-    connect(&dl_mgr, &DownloadManager::progress, this, &Slave::progress);
-    // Add downloads, but don't go yet.
-    for (const auto& url : urls)
-        dl_mgr.append(url);
-    qDebug() << "Created new Slave";
-}
-
-void Slave::run() {
-    emit message("Downloading files...");
-    abort = false;
-    dl_mgr.go(); // begin downloading and wait...
+    return true;
 }
 
 // Create and apply the file. The most important function
-void Slave::all_dls_finished() try {
-    if (abort)
-        return;
+void Engine::all_dls_finished() try {
+    auto check = [this](){if (abort) throw std::runtime_error("Operation aborted");};
+    check();
     std::fstream ret(path); // open a file
     if (!ret)
-        emit failure("Couldn't open the file");
+        throw std::runtime_error("Couldn't open the file");
     QString msg = "Processing files... \n";
     qDebug() << msg;
     emit       message(msg);                   // send info periodically
     qulonglong commented_lines = 0;
     // 1. Add credits
-    if (add_credits)
+    if (credits)
         ret << CREDITS;
     // 2. Add custom entries
     ret << "\n# ------------- C U S T O M ------------- \n";
@@ -180,8 +128,7 @@ void Slave::all_dls_finished() try {
     // 3. Process downloaded files
     std::stringstream f_contents;
     for (const auto& fname : filepaths) { // for every file specified
-        if (abort)
-            return;
+        check();
         if (fname == path) //the user saved to the file they loaded...
             throw std::runtime_error("Tried to save to the file which was loaded. Why?..");
         std::ifstream f(fname);
@@ -202,8 +149,7 @@ void Slave::all_dls_finished() try {
         if (fs::is_directory(p))
             continue; // exclude directory from output
         qDebug() << "Found file " << QString::fromStdString(p.path());
-        if (abort) // check periodically
-            return;
+        check();
         std::ifstream f(p.path()); // open the file
         if (f) {
             f_contents << f.rdbuf();
@@ -214,7 +160,7 @@ void Slave::all_dls_finished() try {
         }
     }
     size_t total_lines = 0; //! Possible division by zero
-    if (add_stats) {        // count the contents of both streams
+    if (stats) {        // count the contents of both streams
         ret.clear();
         ret.seekg(std::ios::beg);
         total_lines += std::count(std::istreambuf_iterator<char>(ret),
@@ -227,13 +173,12 @@ void Slave::all_dls_finished() try {
 
     qDebug() << "Starting to merge files";
     // 5. Process the data in the files
-    if (rem_dups) {
+    if (dups) {
         ret << "\n# ------------- DEDUPLICATED AND SORTED ------------- \n";
         std::set<std::string> strset; // set does not store duplicates
         while (f_contents) {          // Process lines
-            if (abort)
-                return;
-            if (add_stats)
+            check();
+            if (stats)
                 emit progress(int(strset.size() * 100 / total_lines));
             std::string line;
             std::getline(f_contents, line);
@@ -249,9 +194,8 @@ void Slave::all_dls_finished() try {
         std::vector<std::string> strvec;
         ret << "\n# ------------- MERGED ------------- \n";
         while (f_contents) { // Process lines
-            if (abort)
-                return;
-            if (add_stats)
+            check();
+            if (stats)
                 emit progress(int(strvec.size() * 100 / total_lines));
             std::string line;
             std::getline(f_contents, line);
@@ -268,7 +212,7 @@ void Slave::all_dls_finished() try {
     f_contents.clear(); // reduce memory overhead
     qDebug() << "Finished merging files";
     // 6. Get remaining statistics
-    if (add_stats) { // save calculation time by skipping
+    if (stats) { // save calculation time by skipping
         emit        message("Getting your statistics...");
         Stats       st;
         char        symbol = 0;
@@ -278,14 +222,12 @@ void Slave::all_dls_finished() try {
         st.comments += std::count(std::istreambuf_iterator<char>(ret),
                                   std::istreambuf_iterator<char>(), symbol);
         emit progress(50);
-        if (abort)
-            return;
+        check();
         symbol = '\n';
         ret.seekg(std::ios::beg);
         st.lines += std::count(std::istreambuf_iterator<char>(ret),
                                std::istreambuf_iterator<char>(), symbol); //end result
-        if (abort)
-            return;
+        check();
         emit progress(90);
 #ifdef TIME_MULTIPLIER
         st.seconds_added = st.lines / TIME_MULTIPLIER;
@@ -295,21 +237,22 @@ void Slave::all_dls_finished() try {
         st.sources =
             dl_mgr.get_total() + filepaths.size() + 1; // 1 for custom lines
         st.size = fs::file_size(path);                 // in bytes
-        emit stats(st);
+        emit stats_ready(st);
     }
     emit message("Done!");
     emit progress(100);
     emit success();
 } catch (const std::exception& e) {
-    auto msg = QString::fromStdString(e.what());
+    auto msg = QString::fromStdString(e.what()).prepend("Couldn't save your file: \n");
     qDebug() << msg;
-    emit failure(msg);
+    stop();
+    emit failed(msg);
     return;
 }
 
-auto Slave::process_line(std::string line) const
+auto Engine::process_line(std::string line) const
     -> std::pair<bool, std::string> {
-    if (rem_comments) { // remove comments
+    if (comms) { // remove comments
         auto it = line.find('#');
         if (it != std::string::npos) {
             line.erase(it);

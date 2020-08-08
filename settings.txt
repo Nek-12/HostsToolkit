@@ -9,7 +9,6 @@
 0.0.0.0 pixiv.net
 > FILES
 /etc/hosts
-/home/nek/Desktop/hosts
 > URLS
 https://github.com/4skinSkywalker/anti-porn-hosts-file/raw/master/HOSTS.txt
 https://github.com/Clefspeare13/pornhosts/raw/master/0.0.0.0/hosts

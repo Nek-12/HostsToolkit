@@ -196,7 +196,7 @@ bool DownloadManager::isHttpRedirect() const {
 
 void DownloadManager::stop() {
     if (cur_dl)
-        cur_dl->abort(); //! emits finished() on call,
+        cur_dl->abort(); //! emits finished() on call;
     // starts a recursive chain reaction of slots and signals
     // which ends with slave::all_dls_finished with abort set to true.
     downloadQueue.clear();
