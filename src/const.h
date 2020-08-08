@@ -12,7 +12,7 @@
 
 #ifdef __linux__
 #define HOSTS           "/etc/hosts"
-#elif ifdef _WIN32
+#elif _WIN32
 #define TIME_MULTIPLIER                                                        \
     400 // on Win, modifying hosts file slows down boot up process,
         // we'll reflect this in statistics
