@@ -224,11 +224,9 @@ download
 .vscode
 
 # custom entries file
-**/*.txt
 **/.temp
 
 # clang
 .clangd
-.clang-tidy
-.clang-format
 compile_commands.json
+*.txt
