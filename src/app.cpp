@@ -1,19 +1,17 @@
 #include "src/app.h"
 #include "src/engine.h"
 #include <qmessagebox.h>
-#include <qnamespace.h>
 App::App(QWidget* parent) :
-    QMainWindow(parent), ui(new Ui::MainWindow), e(this),
-    secondary_thread(), progress_bar(this) {
+    QMainWindow(parent), ui(new Ui::MainWindow), e(new Engine), progress_bar(this) {
     ui->setupUi(this);
     // ---------ENGINE------
-    e.moveToThread(secondary_thread);
-    connect(&e, &Engine::stats_ready, this, &App::upd_stats);
-    connect(&e, &Engine::success, this, &App::engine_ready);
-    connect(&e, &Engine::failed, this, &App::engine_failed);
-    connect(&e, &Engine::state_updated, this, &App::upd_pending_state);
-    connect(&e, &Engine::message, this, &App::msg);
-    connect(&e, &Engine::progress, this, &App::set_progress);
+    connect(e, &Engine::stats_ready, this, &App::upd_stats);
+    connect(e, &Engine::success, this, &App::engine_ready);
+    connect(e, &Engine::failed, this, &App::engine_failed);
+    connect(e, &Engine::state_updated, this, &App::upd_pending_state);
+    connect(e, &Engine::message, this, &App::msg);
+    connect(e, &Engine::progress, this, &App::set_progress);
+    connect(e, &Engine::report_speed,&progress_bar,&QProgressDialog::setWindowTitle);
     qDebug() << "Created engine";
     // ----------UI----------
     connect(ui->CustomEntriesList, &QListWidget::itemActivated,
@@ -45,7 +43,7 @@ App::App(QWidget* parent) :
         Qt::WindowModal);                  // block the app window on show()
     progress_bar.setAutoReset(false); // don't reset() on 100%
     progress_bar.reset();             // hide the window
-    connect(&progress_bar, &QProgressDialog::canceled, &e, &Engine::stop);
+    connect(&progress_bar, &QProgressDialog::canceled, e, &Engine::stop);
     qDebug() << "Created and hidden the progress window";
     //--MISC--
     qDebug() << "Loading config...";
@@ -86,18 +84,22 @@ void App::load_config() {
 
 void App::start_engine(const QString& path) {
     progress_bar.show();
-    if (!path.isEmpty() && path.isSimpleText() ) { //if the user selected something (dialogbox could return "")
-        e.start_work(path.toStdString(), ui->RemCommentsBox->isChecked(),
-                         ui->RemDupsBox->isChecked(),
-                         ui->AddCreditsBox->isChecked(),
-                         ui->AddStatsBox->isChecked());
+    if (!path.isEmpty()) { // if the user selected something (dialogbox could
+                           // return "")
+        if (path.isSimpleText())
+            e->start_work(path.toStdString(), ui->RemCommentsBox->isChecked(),
+                          ui->RemDupsBox->isChecked(),
+                          ui->AddCreditsBox->isChecked(),
+                          ui->AddStatsBox->isChecked());
+        else
+            display_warning("The path you entered is not valid.");
         //send the state and create a thread
     }
 }
 
 void App::add_url(const QString &s) {
     if (check_url(s)) { //if the url is valid (network is available)
-        e.add_url(s); //send to Engine
+        e->add_url(s); //send to Engine
         new QListWidgetItem(s, ui->UrlsList); //add text
     } else {
         display_warning(QString("Couldn't add URL: ").append(s));
@@ -108,7 +110,7 @@ void App::add_file(const QString &s) {
     qDebug() << "load_file called";
     QFile f(s);
     if (f.open(QIODevice::ReadOnly)) { //at least check for read access
-        e.add_file(s.toStdString());
+        e->add_file(s.toStdString());
         new QListWidgetItem(s, ui->FileList);
         qDebug() << "Added the file: " << s;
     } else {
@@ -117,7 +119,7 @@ void App::add_file(const QString &s) {
 }
 
 void App::add_custom(const QString &s) {
-    e.add_custom(s.toStdString());
+    e->add_custom(s.toStdString());
     new QListWidgetItem(s, ui->CustomEntriesList);
 }
 
@@ -146,7 +148,7 @@ void App::del_url_clicked() {
     if (!item) //if the user did not select anything but still clicks
         return;
     auto row = ui->UrlsList->currentRow();
-    e.rem_file(row);
+    e->rem_url(row);
     delete item;
 }
 
@@ -159,11 +161,11 @@ void App::del_file_clicked() {
         ui->LoadSystemHosts->setEnabled(true);
     }
     auto row = ui->FileList->currentRow();
-    e.rem_file(row);
+    e->rem_file(row);
     delete item;
 }
 void App::del_custom_clicked() {
-    e.rem_custom(ui->CustomEntriesList->currentRow());
+    e->rem_custom(ui->CustomEntriesList->currentRow());
     delete ui->CustomEntriesList->currentItem();
 }
 
@@ -205,12 +207,12 @@ void App::add_url_clicked() {
 }
 
 void App::apply_clicked() {
-    if (!e.is_pending() || !e.sources())
+    if (!e->is_pending() || !e->sources())
         return; //if there is nothing, just ignore
     start_engine(HOSTS);
 }
 void App::save_to_clicked() {
-    if (!e.is_pending() || !e.sources())
+    if (!e->is_pending() || !e->sources())
         return;
     QString     path;
     QFileDialog d(this, tr("Select the destination file"), HOSTS);
@@ -222,9 +224,9 @@ void App::save_to_clicked() {
 }
 
 void App::upd_pending_state() {
-    //disable apply buttons if the user did not modify anything since last time.
-    ui->ApplyFileButton->setEnabled(e.is_pending());
-    ui->SaveToButton->setEnabled(e.is_pending());
+    //disable apply buttons if the user did not modify anything since last time->
+    ui->ApplyFileButton->setEnabled(e->is_pending());
+    ui->SaveToButton->setEnabled(e->is_pending());
 }
 
 void App::sys_load() {
@@ -238,10 +240,10 @@ void App::sys_load() {
 
 //on [X] pressed
 void App::closeEvent(QCloseEvent *event) {
-    if (!e.save_entries(CONFIG_FNAME))
+    if (!e->save_entries(CONFIG_FNAME))
         display_warning("Couldn't save your settings!");
-    e.stop(); // cleanup
-    secondary_thread->wait();
+    e->stop(); // cleanup
+    e->deleteLater();
     QWidget::closeEvent(event);
     //QT will handle the memory for us
 }

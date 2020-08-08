@@ -10,15 +10,15 @@
 namespace fs = std::filesystem;
 
 //          -------------ENGINE------------
-Engine::Engine(QObject* parent = nullptr) : QObject(parent) {
-    qDebug() << "Creating an Engine...";
+Engine::Engine(QObject* parent) : QObject(parent) {
     connect(&dl_mgr, &DownloadManager::message, this, &Engine::message);
     connect(&dl_mgr, &DownloadManager::all_finished, this,
             &Engine::all_dls_finished);
     connect(&dl_mgr, &DownloadManager::dl_failed, this, &Engine::stop);
     connect(&dl_mgr, &DownloadManager::dl_failed, this, &Engine::failed);
     connect(&dl_mgr, &DownloadManager::progress, this, &Engine::progress);
-    // Add downloads, but don't go yet.
+    connect(&dl_mgr, &DownloadManager::report_speed, this, &Engine::report_speed);
+    qDebug() << "Created an Engine";
 }
 
 void Engine::start_work(const std::string& hosts_path, bool rem_comments,
@@ -32,6 +32,8 @@ void Engine::start_work(const std::string& hosts_path, bool rem_comments,
         emit failed("The process is already running");
         return;
     }
+    fs::remove_all(DL_FOLDER); // clean up an orphaned temp dir
+    fs::create_directory(DL_FOLDER);
     qDebug() << "Starting work";
     pending = false;
     emit state_updated();
@@ -39,6 +41,7 @@ void Engine::start_work(const std::string& hosts_path, bool rem_comments,
     for (const auto& u : urls)
         dl_mgr.append(u);
     abort = false;
+    working = true;
     dl_mgr.go(); // begin downloading and wait...
     // forget about the engine for now
 }
@@ -47,6 +50,7 @@ void Engine::stop() {
     qDebug() << "Ordered engine to stop";
     abort = true;
     pending = true;
+    working = false;
     dl_mgr.stop();
     fs::remove_all(DL_FOLDER); // delete temp folder
     emit state_updated();
@@ -109,11 +113,22 @@ bool Engine::save_entries(const std::string& path) {
 
 // Create and apply the file. The most important function
 void Engine::all_dls_finished() try {
-    auto check = [this](){if (abort) throw std::runtime_error("Operation aborted");};
-    check();
-    std::fstream ret(path); // open a file
+    auto check = [this]() {
+        if (abort)
+            throw std::runtime_error("Operation aborted");
+    };
+    //if abort was set before donwloads have finished, then the error has already been reported.
+    if (abort) {
+        stop();
+        return;
+    }
+    qDebug() << "Starting to work on file, path: " << QString::fromStdString(path);
+    std::fstream ret(
+        path, std::fstream::in | std::fstream::out |
+                  std::fstream::trunc); // open a file rw, create if needed.
+    //file system dialog will warn the user about overwriting for us.
     if (!ret)
-        throw std::runtime_error("Couldn't open the file");
+        throw std::runtime_error(std::string("Couldn't open file: ").append(path));
     QString msg = "Processing files... \n";
     qDebug() << msg;
     emit       message(msg);                   // send info periodically
@@ -130,13 +145,13 @@ void Engine::all_dls_finished() try {
     for (const auto& fname : filepaths) { // for every file specified
         check();
         if (fname == path) //the user saved to the file they loaded...
-            throw std::runtime_error("Tried to save to the file which was loaded. Why?..");
+            throw std::runtime_error("Tried to save to the file which is loaded. Why?..");
         std::ifstream f(fname);
         if (f) { // open, read
             f_contents << f.rdbuf();
         } else {
             throw std::runtime_error(
-                std::string("Couldn't open file: ").append(fname));
+                std::string("Couldn't open specified file: ").append(fname));
         }
     }
     // 4. Add the files we downloaded
@@ -239,14 +254,16 @@ void Engine::all_dls_finished() try {
         st.size = fs::file_size(path);                 // in bytes
         emit stats_ready(st);
     }
+    working = false;
     emit message("Done!");
     emit progress(100);
     emit success();
 } catch (const std::exception& e) {
-    auto msg = QString::fromStdString(e.what()).prepend("Couldn't save your file: \n");
+    auto msg = QString::fromStdString(e.what());
     qDebug() << msg;
     stop();
     emit failed(msg);
+    working = false;
     return;
 }
 

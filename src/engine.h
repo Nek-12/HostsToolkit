@@ -4,10 +4,8 @@
 #include <QThread>
 #include <filesystem>
 #include <fstream>
-#include <qmutex.h>
 #include <qprogressdialog.h>
 #include <qurl.h>
-#include <qwaitcondition.h>
 #include <set>
 
 struct Stats {
@@ -24,7 +22,7 @@ struct Stats {
 class Engine : public QObject {
     Q_OBJECT
 public:
-    explicit Engine(QObject* parent);
+    explicit Engine(QObject* parent = nullptr);
     // Starts working. Once finishes, emits ready(data)
     void start_work(const std::string& path, bool rem_comments, bool rem_dups,
                     bool add_credits, bool add_stats);
@@ -52,6 +50,7 @@ signals:
     void failed(const QString& msg); // couldn't finish
     void stats_ready(Stats);
     void state_updated(); //-> are changes pending or not?
+    void report_speed(const QString& );
 
 private:
     [[nodiscard]] std::pair<bool, std::string> process_line(std::string) const;

@@ -38,24 +38,17 @@ bool check_url(const QUrl &url) {
     return false;
 }
 
-DownloadManager::DownloadManager(QObject *parent) : QObject(parent) {}
+DownloadManager::DownloadManager(QObject* parent) : QObject(parent) {
+    qDebug() << "Created download manager";
+}
 
-void DownloadManager::append(const QUrl &url) {
+void DownloadManager::append(const QUrl& url) {
     downloadQueue.enqueue(url); // add to queue
     ++totalCount;
     qDebug() << "Added to queue: " << url;
 }
 
 void DownloadManager::go() const {
-    // NOLINTNEXTLINE
-    using namespace std::filesystem;
-    if (!exists(DL_FOLDER) || !is_directory(DL_FOLDER)) {
-        create_directory(DL_FOLDER);
-    } else if (exists(DL_FOLDER) && is_directory(DL_FOLDER)) {
-        remove_all(DL_FOLDER); // delete an orphaned temp folder
-        create_directory(DL_FOLDER);
-    }
-    // create a folder if needed
     QTimer::singleShot(0, this, &DownloadManager::start_next_dl);
     // try to start the new download ASAP when the timer is called
     qDebug() << "Started download timer";
@@ -123,6 +116,7 @@ void DownloadManager::dl_progress(qint64 bytesReceived, qint64 bytesTotal) {
     }
     // save the last speed in case someone asks for it
     dl_speed = QString::fromLatin1("%1 %2").arg(speed, 3, 'f', 1).arg(unit);
+    report_speed(dl_speed);
 }
 
 // when download ends (no matter failed or not)
@@ -134,9 +128,8 @@ void DownloadManager::on_dl_finished() {
 
     if (cur_dl->error()) {
         // download failed
-        emit dl_failed(
-            QString("Failed: %1").arg(qPrintable(cur_dl->errorString())));
-        output.remove(); // close the file
+        emit dl_failed(qPrintable(cur_dl->errorString()));
+        stop();
     } else {
         // check if it was actually a redirect
         if (isHttpRedirect()) {
@@ -149,6 +142,7 @@ void DownloadManager::on_dl_finished() {
         }
     }
     cur_dl->deleteLater(); // throw it away
+    cur_dl = nullptr;
     start_next_dl();       // start the next download
 }
 
@@ -198,7 +192,7 @@ void DownloadManager::stop() {
     if (cur_dl)
         cur_dl->abort(); //! emits finished() on call;
     // starts a recursive chain reaction of slots and signals
-    // which ends with slave::all_dls_finished with abort set to true.
+    // which ends with all_dls_finished with abort set to true.
     downloadQueue.clear();
     downloadedCount = 0;
     totalCount      = 0;

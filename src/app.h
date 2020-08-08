@@ -8,8 +8,6 @@
 #include <QMessageBox>
 #include <QProgressDialog>
 #include <fstream>
-// TODO: Add mutex for data!
-// TODO: Delete statusbar
 // NOLINTNEXTLINE
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -59,8 +57,8 @@ private:
     start_engine(const QString& path); // Starts the engine with the given path
 
     Ui::MainWindow*  ui;
-    Engine           e; // Background processing
-    QThread*         secondary_thread;
+    Engine*           e; // Background processing
+
     QProgressDialog progress_bar;
     void closeEvent(QCloseEvent*) override; // Save files before exit
     bool sys_loaded = false;                // Is the system hosts file loaded

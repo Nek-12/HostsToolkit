@@ -23,11 +23,12 @@ public:
     [[nodiscard]] QString     get_speed() const { return dl_speed; }
 
 signals:
-    void dl_finished(QUrl);
+    void dl_finished(const QUrl&);
     void all_finished();
-    void dl_failed(QString msg);
+    void dl_failed(const QString& msg);
     void progress(int percentage);
-    void message(QString);
+    void message(const QString&);
+    void report_speed(const QString&);
 
 public slots:
     void go() const; // start all downloads
