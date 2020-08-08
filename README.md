@@ -14,6 +14,9 @@ The UI is pretty self-explanatory.
 On hidden feature is the ability to drag and drop the text file to the program icon.
 If you want to apply your files directly to the system, run the program with sudo/admin privileges.
 The program creates and deletes temporary folders and saves your settings in a text file. You are free to modify it, but don't change the order of headers marked by a special symbol.
+## Screenshots
+![Screenshot 1](/res/screenshot_2.png)
+![Screenshot 1](/res/screenshot_1.png)
 ## License
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
