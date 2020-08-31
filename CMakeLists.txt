@@ -38,3 +38,7 @@ qt5_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
 add_executable(HT WIN32 ${all_SRCS} src/app.ui res/res.qrc ${TS_FILES} )
 
 target_link_libraries(HT PRIVATE Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network)
+
+install(TARGETS HT
+        CONFIGURATIONS Release
+        DESTINATION bin)
