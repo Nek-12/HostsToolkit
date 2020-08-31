@@ -3,7 +3,7 @@
 #define DL_FOLDER               ".HT_temp/"
 #define URL_RETRIALS_CNT 5
 #define SPLIT_CHAR       '>'
-#define VERSION          "3.1.1"
+#define VERSION          "3.1.2"
 // CONFIG has >CUSTOM, >FILES, >URLS in exactly this order
 #define CONFIG_FNAME "HT_settings.txt"
 
