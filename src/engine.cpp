@@ -248,7 +248,7 @@ void Engine::all_dls_finished() try {
         st.seconds_added = st.lines / TIME_MULTIPLIER;
 #endif
         qDebug() << st.lines << " total lines in the resulting file";
-        st.removed = total_lines - st.lines; // toal_lines (before optimizing) - st.lines (after)
+        st.removed = total_lines - st.lines; // total_lines (before optimizing) - st.lines (after)
         st.sources =
             dl_mgr.get_total() + filepaths.size() + 1; // 1 for custom lines
         st.size = fs::file_size(path);                 // in bytes
@@ -279,5 +279,13 @@ auto Engine::process_line(std::string line) const
             return std::make_pair(true, line);
         }
     }
+    //Replace tabs with spaces
+    std::replace_if(line.begin(),line.end(), isspace, ' ');
+    // Remove repeating spaces
+    std::string::iterator new_end =
+        std::unique(line.begin(), line.end(), [](char lhs, char rhs) {
+            return (lhs == rhs) && (lhs == ' ');
+        });
+    line.erase(new_end, line.end());
     return std::make_pair(false, line);
 }

@@ -1,12 +1,11 @@
-
 // ----------IMPORTANT------------
 #define DOWNLOADED_HOSTS_PREFIX "hosts_"
-#define DL_FOLDER               ".temp/"
+#define DL_FOLDER               ".HT_temp/"
 #define URL_RETRIALS_CNT 5
 #define SPLIT_CHAR       '>'
 #define VERSION          "3.1.1"
 // CONFIG has >CUSTOM, >FILES, >URLS in exactly this order
-#define CONFIG_FNAME "settings.txt"
+#define CONFIG_FNAME "HT_settings.txt"
 
 // --------------CROSS-PLATFORM--------------
 
@@ -36,9 +35,12 @@
     "This program is free software: you can redistribute it and/or modify it " \
     "under the terms of the GNU General Public License as published by the "   \
     "Free Software Foundation, either version 3 of the License, "              \
-    "or (at your option) any later version. "                                   \
-    "This program is distributed in the hope that it will be useful, "          \
+    "or (at your option) any later version. "                                  \
+    "This program is distributed in the hope that it will be useful, "         \
     "but WITHOUT ANY WARRANTY;"                                                \
-    "without even the implied warranty of MERCHANTABILITY or "                  \
-    "FITNESS FOR A PARTICULAR PURPOSE. "                                        \
+    "without even the implied warranty of MERCHANTABILITY or "                 \
+    "FITNESS FOR A PARTICULAR PURPOSE. "                                       \
     "See the GNU General Public License for more details."
+
+#define CONTACT                                                                \
+    "Contact the developer on github: https://github.com/Nek-12/HostsTools"

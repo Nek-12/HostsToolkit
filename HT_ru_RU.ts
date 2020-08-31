@@ -24,7 +24,12 @@ Total lines removed: %6</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="src/app.cpp" line="271"/>
+        <location filename="src/app.cpp" line="266"/>
+        <source>Your current hosts file contains more than %1 lines which means you will have around %2 seconds added to the boot process. Unless you have a very powerful machine, you will NOT have any access to the internet during these %2 seconds.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="src/app.cpp" line="277"/>
         <source>HostsTools V%1
 https://github.com/Nek-12/HostsTools
 By Nek.12 
@@ -34,7 +39,7 @@ t.me/Nek_12
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="src/app.cpp" line="270"/>
+        <location filename="src/app.cpp" line="276"/>
         <source>About HostsTools</source>
         <translation type="unfinished"></translation>
     </message>

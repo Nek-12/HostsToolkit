@@ -257,11 +257,17 @@ void App::upd_stats(const Stats &st) {
            "Seconds added to boot up process (Approximate): %5 \n"
            "Total lines removed: %6")
             .arg(st.lines)
-            .arg(double(st.size) / 1000) //convert B to kB
+            .arg(double(st.size) / 1000) // convert B to kB
             .arg(st.comments)
             .arg(st.sources)
             .arg(st.seconds_added)
             .arg(st.removed));
+    if (st.seconds_added > 300)
+        display_warning(tr(
+            "Your current hosts file contains more than %1 lines which "
+            "means you will have around %2 seconds added to the boot process. "
+            "Unless you have a very powerful machine, you will NOT have any access to the internet during these %2 seconds.")
+            .arg(st.lines).arg(st.seconds_added));
 }
 
 void App::msg(const QString& s) { progress_bar.setLabelText(s); }
