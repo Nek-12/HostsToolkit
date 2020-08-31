@@ -15,11 +15,11 @@
     </message>
     <message>
         <location filename="src/app.cpp" line="253"/>
-        <source>Total lines: %1 
-File Size (KB) %2 
-Comments: %3 
-Sources: %4 
-Seconds added to boot up process (Approximate): %5 
+        <source>Total lines: %1
+File Size (KB) %2
+Comments: %3
+Sources: %4
+Seconds added to boot up process (Approximate): %5
 Total lines removed: %6</source>
         <translation type="unfinished"></translation>
     </message>
@@ -32,7 +32,7 @@ Total lines removed: %6</source>
         <location filename="src/app.cpp" line="277"/>
         <source>HostsTools V%1
 https://github.com/Nek-12/HostsTools
-By Nek.12 
+By Nek.12
 t.me/Nek_12
 
 </source>
@@ -186,6 +186,32 @@ t.me/Nek_12
         <location filename="build/HT_autogen/include/ui_app.h" line="236"/>
         <location filename="HT_autogen/include/ui_app.h" line="236"/>
         <source>Remove comments</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="build/HT_autogen/include/ui_app.h" line="238"/>
+        <location filename="build/HT_autogen/include/ui_mainwindow.h" line="190"/>
+        <source>HostsToolkit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="build/HT_autogen/include/ui_mainwindow.h" line="194"/>
+        <source>Apply to System</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="build/HT_autogen/include/ui_mainwindow.h" line="197"/>
+        <source>Browse for a file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="build/HT_autogen/include/ui_mainwindow.h" line="200"/>
+        <source>Add credits and statistics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="build/HT_autogen/include/ui_mainwindow.h" line="201"/>
+        <source>Files to merge:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -149,15 +149,15 @@ void Engine::all_dls_finished() try {
         // iterate over every file in the dir
         if (fs::is_directory(p))
             continue; // exclude directory from output
-        qDebug() << "Found file " << QString::fromStdString(p.path());
+        qDebug() << "Found file " << QString::fromStdString(p.path().string());
         check();
         std::ifstream f(p.path()); // open the file
         if (f) {
             f_contents << f.rdbuf();
-            qDebug() << "Added file " << QString::fromStdString(p.path());
+            qDebug() << "Added file " << QString::fromStdString(p.path().string());
         } else {
             throw std::runtime_error(
-                std::string("Couldn't open file:").append(p.path()));
+                std::string("Couldn't open file:").append(p.path().string()));
         }
     }
     // 3. Open and clear the desired file
